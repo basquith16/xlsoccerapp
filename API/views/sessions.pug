@@ -1,0 +1,49 @@
+extends base
+
+block content 
+    main.main
+      h1.page-title Available Training, Leagues, and Camps
+      div.card-container
+
+        each session in sessions
+            div.card
+                div.card__header
+                    div.card__picture
+                        div.card__picture-overlay
+                        - const imgURL = JSON.stringify(session.image);
+                        - const image = session.image[0]; console.log(image);
+                        img.card__picture-img(src=`img/sessions/${image}` alt=`${session.name}`)
+                    h3.heading-tertirary
+                        span= session.name
+                div.card__details
+                    h4.card__sub-heading Training for
+                    p.card__text= session.description    
+                    
+                    div.card__data
+                        svg.card__icon
+                            use(xlink:href='img/icons.svg#icon-map-pin')
+                        span Lake Nona
+            
+                    div.card__data
+                        svg.card__icon
+                            use(xlink:href='img/icons.svg#icon-calendar')
+                        span= (session.startDates[0]).toLocaleDateString('en-US')
+
+                    each trainer in session.trainers
+                        div.card__data
+                            svg.card__icon
+                                use(xlink:href='img/icons.svg#icon-clipboard')
+                                span= `${JSON.stringify(trainer, ['name']).replace(/"name/g, "").replace(/[`()|;:'",\{\}\[\]\\\/]/gi, '')}`
+
+                    div.card__data
+                        svg.card__icon
+                            use(xlink:href='img/icons.svg#icon-user')
+                        span #{session.rosterLimit} spots left
+                div.card__footer
+                    div.price-info
+                        span.card__footer-value $#{session.price}
+                        |  for 
+                        span.card__footer-value= session.duration
+                    a.btn.btn--red.btn--smallDetails(href=`/session/${session.slug}`) Register
+          
+        

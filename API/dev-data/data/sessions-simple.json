@@ -1,0 +1,80 @@
+[
+    {
+        "startDates": [],
+        "endDate": [],
+        "roster": [],
+        "name": "2016 Academy Boys",
+        "price": 125,
+        "startDate": "July 10th 2023",
+        "timeStart": "5:15pm",
+        "timeEnd": "6:15pm",
+        "trainer": "Coach David",
+        "rosterLimit": 15,
+        "birthYear": 2016
+    },
+    {
+        "startDates": [],
+        "endDate": [],
+        "roster": [],
+        "name": "2013 Academy Girls",
+        "price": 125,
+        "startDate": "July 10th 2023",
+        "timeStart": "5:15pm",
+        "timeEnd": "6:15pm",
+        "trainer": "Coach Sabrina",
+        "rosterLimit": 15,
+        "birthYear": 2013
+    },
+    {
+        "startDates": [],
+        "endDate": [],
+        "roster": [],
+        "name": "2017 Academy Boys",
+        "price": 125,
+        "startDate": "July 10th 2023",
+        "timeStart": "4:15pm",
+        "timeEnd": "5:15pm",
+        "trainer": "Coach Jorge",
+        "rosterLimit": 15,
+        "birthYear": 2016
+    },
+    {
+        "startDates": [],
+        "endDate": [],
+        "roster": [],
+        "_id": "64a06ea41446a64466f043e1",
+        "name": "2015 Academy Boys",
+        "price": 125,
+        "timeStart": "7:15pm",
+        "timeEnd": "8:15pm",
+        "trainer": "Coach Brandon",
+        "rosterLimit": 15,
+        "birthYear": 2015
+    },
+    {
+        "startDates": [],
+        "endDate": [],
+        "roster": [],
+        "_id": "64a06ea41446a64466f043e2",
+        "name": "2014 Academy Girls",
+        "price": 125,
+        "timeStart": "3:15pm",
+        "timeEnd": "4:15pm",
+        "trainer": "Coach Sabrina",
+        "rosterLimit": 15,
+        "birthYear": 2014
+    },
+    {
+        "startDates": [],
+        "endDate": [],
+        "roster": [],
+        "_id": "64a06ea41446a64466f043e3",
+        "name": "2012 Academy Boys",
+        "price": 125,
+        "timeStart": "4:15pm",
+        "timeEnd": "5:15pm",
+        "trainer": "Coach Jorge",
+        "rosterLimit": 15,
+        "birthYear": 2012
+    }
+]
