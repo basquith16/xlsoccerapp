@@ -17,10 +17,8 @@ export const getInvoices = async () => {
 
 export const bookSession = async sessionId => {
     try {
-        const checkout = await axios (`http://127.0.0.1:8000/api/v1/booking/checkout/${sessionId}`);
-
-        await stripe.redirectToCheckout({
-            sessionId: checkout.data.checkout.id        });
+        const checkout = await axios (`/api/v1/booking/checkout/${sessionId}`);
+        await stripe.redirectToCheckout({sessionId: checkout.data.checkout.id});
     } catch (err) {
         console.log(err);
     }

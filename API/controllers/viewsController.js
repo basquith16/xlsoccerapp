@@ -139,9 +139,6 @@ exports.getMyInvoices = catchAsync(async (req, res, next) => {
         invoices.push(invoice);
     });
 
-    console.log(invoiceList.data);
-
-
     res.status(200).render('my-billing', {
         title: 'My Invoices',
         invoices,

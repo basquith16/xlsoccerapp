@@ -62,7 +62,6 @@ export const updateSession = async (data) => {
 
     if (res.data.status === 'success') {
       showAlert('success', `Session Successfully Updated!`);
-      console.log(data);
     }
   } catch (err) {
     showAlert('error', err.response.data.message);

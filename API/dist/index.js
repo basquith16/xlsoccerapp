@@ -580,7 +580,6 @@ document.addEventListener("DOMContentLoaded", (event)=>{
     const formBtn = document.querySelector(".form");
     if (formBtn) formBtn.addEventListener("submit", (e)=>{
         e.preventDefault();
-        console.log("submit clicked");
         const email = document.getElementById("email").value;
         const password = document.getElementById("password").value;
         (0, _login.login)(email, password);

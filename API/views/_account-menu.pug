@@ -3,7 +3,7 @@ nav.user-view__menu
         li.settings.side-nav--active
             a(href='/myaccount')
                 svg
-                    use(xlink:href='http://127.0.0.1:8000/img/icons.svg#icon-settings')
+                    use(xlink:href='/img/icons.svg#icon-settings')
                 | Settings
         li.settings
             a(href='/myaccount/sessions')
@@ -12,12 +12,12 @@ nav.user-view__menu
         li.settings
             a(href='/myaccount/players')
                 svg
-                    use(xlink:href=`http://127.0.0.1:8000/img/icons.svg#icon-star`)
+                    use(xlink:href=`/img/icons.svg#icon-star`)
                 | My Players
         li.settings
             a(href='/myaccount/billing')
                 svg
-                    use(xlink:href='http://127.0.0.1:8000/img/icons.svg#icon-credit-card')
+                    use(xlink:href='/img/icons.svg#icon-credit-card')
                 | Billing
     if user.role === 'admin' || user.role === 'coach'
         .admin-nav
@@ -30,17 +30,17 @@ nav.user-view__menu
                 li.admin-settings
                     a(href='/myaccount/admin/users')
                         svg
-                            use(xlink:href='http://127.0.0.1:8000/img/icons.svg#icon-users')
+                            use(xlink:href='/img/icons.svg#icon-users')
                         | Manage Users
                 li.admin-settings
                     a(href='/myaccount/admin/players')
                         svg
-                            use(xlink:href='http://127.0.0.1:8000/img/icons.svg#icon-star')
+                            use(xlink:href='/img/icons.svg#icon-star')
                         | Manage Players
                 li.admin-settings
                     a(href='#')
                         svg
-                            use(xlink:href='http://127.0.0.1:8000/img/icons.svg#icon-credit-card')
+                            use(xlink:href='/img/icons.svg#icon-credit-card')
                         | Manage Billing
     else 
         span.hidden

@@ -11,6 +11,7 @@ const csp = require('express-csp');
 const cookieParser = require('cookie-parser');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
+const compression = require('compression');
 
 // Set up Pug
 app.set('view engine', 'pug');
@@ -121,6 +122,7 @@ app.use(
     })
 );
 
+app.use(compression())
 
 // Test Middleware
 app.use((req, res, next) => {

@@ -9,8 +9,6 @@ exports.setSessionUserIds = (req, res, next) => {
     if(!req.body.account) req.body.account = req.params.userId;
     if(!req.body.teams) req.body.teams = req.params.teamsId;
 
-    console.log(req.body.account);
-
     next();
 }
 

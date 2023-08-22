@@ -14,7 +14,6 @@ block content
                                 .players
                                     each player in getPlayers
                                         if player.account == user.id
-                                            - console.log(`${player}`)
                                             .players__card
                                                 span.profImg(style=`background: url(/img/players/${player.profImg}), #fff;`)
                                                 h6.players__user= `${player.name}`

@@ -148,7 +148,7 @@ sessionSchema.pre(/^find/, function(next) {  // regular expression for every que
 // Aggregation Middleware
 sessionSchema.pre('aggregate', function(next) {
     this.pipeline().unshift({ $match: { staffOnly: { $ne: true } } } );
-    console.log(this.pipeline());
+    // console.log(this.pipeline());
     next();
 })
 
