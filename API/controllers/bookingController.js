@@ -51,3 +51,5 @@ exports.getAllBookings = factory.getAll(Booking);
 exports.getBooking = factory.getOne(Booking);
 exports.updateBooking = factory.updateOne(Booking);
 exports.deleteBooking = factory.deleteOne(Booking);
+
+rubber duck
