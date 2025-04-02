@@ -112,11 +112,10 @@ exports.getMyPlayers = catchAsync(async (req, res, next) => {
     let getPlayers = await Player.find();
     const getSessions = await Session.find();
 
-
     res.status(200).render('my-players', {
         title: 'My Players',
         getPlayers,
-        getSessions
+        getSessions,
     });
 });
 
@@ -203,9 +202,6 @@ exports.getSingleUser = catchAsync(async (req, res, next) => {
 });
 
 exports.getThankYou = catchAsync(async (req, res, next) => {
-    const sessionID = await req.query.session;
-    const rosterCount = await req.query.roster - 1;
-    const session = await Session.findOneAndUpdate({ _id: sessionID }, {rosterLimit: rosterCount});
 
    res.status(200).render('thank-you', {
        title: 'Thank You For Your Purchase',

@@ -18,6 +18,6 @@ router.get('/myaccount/admin/sessions', authController.protect, viewsController.
 router.get('/myaccount/admin/users', authController.protect, viewsController.getAdminUsers);
 router.get('/myaccount/admin/players', authController.protect, viewsController.getAdminPlayers);
 router.get('/myaccount/admin/user', authController.protect, viewsController.getSingleUser);
-router.get('/thank-you', authController.protect, viewsController.getThankYou, bookingController.createBookingCheckout);
+router.get('/thank-you', bookingController.createBookingCheckout, authController.protect, viewsController.getThankYou);
 
 module.exports = router;

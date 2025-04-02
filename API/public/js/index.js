@@ -4,6 +4,7 @@
 import { login, logout } from './login.js';
 import { updateSettings, adminUpdateSettings } from './updateSettings.js';
 import { createSession, deleteSession } from './handleSessions.js';
+import { createPlayer } from './handlePlayers.js';
 import { createUser, deleteUser, updateUser } from './handleUsers.js';
 import { bookSession } from './stripe.js';
 import { getInvoices } from './stripe.js';
@@ -36,6 +37,10 @@ const sessionImgSuccessMsg = document.querySelector('.sessionImage-upload-succes
 const sessionImgsSuccessMsg = document.querySelector('.sessionImages-upload-success');
 const sessionImageUploads = document.getElementById('session-image');
 const sessionImagesUploads = document.getElementById('session-images');
+const playerDataForm = document.querySelector('.form-player-data');
+const playerImageUploads = document.getElementById('player-image');
+const playerImgSuccessMsg = document.querySelector('.playerImage-upload-success');
+
 
 // DELEGATION
 // if (mapBox) {
@@ -88,6 +93,38 @@ document.addEventListener("DOMContentLoaded", (event) => {
             const { sessionId } = e.target.dataset;
             bookSession(sessionId);
         } )
+    }
+
+
+    if(playerDataForm) {
+        playerImageUploads.addEventListener('change', async (e) => {
+            document.querySelector('.playerImage-upload-label').classList.add('hidden');
+            playerImgSuccessMsg.classList.remove('hidden');
+        });
+
+        playerDataForm.addEventListener('submit', e => {
+            e.preventDefault();
+            const playerForm = new FormData();
+
+            // Format Session Profile Images
+            const profImgs = (document.getElementById('player-image').files);
+            let profileImages = [];
+            let i = 0;
+            while (i < profImgs.length) {
+                profileImages.push((profImgs[i]).name);
+                i++
+            }
+
+            playerForm.append('name', document.getElementById('playerName').value);
+            playerForm.append('birthDate', document.getElementById('birthDate').value);
+            playerForm.append('profImg', (document.getElementById('player-image').files[0]).name);
+            playerForm.append('sex', document.getElementById('gender').value);
+            playerForm.append('waiverSigned', false);
+            playerForm.append('isMinor', true);
+            playerForm.append('account', document.getElementById('account').value);
+           
+            createPlayer(playerForm);
+        });
     }
 
     if(sessionDataForm) {

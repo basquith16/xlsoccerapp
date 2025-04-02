@@ -11,7 +11,7 @@ block content
                     div.card__picture
                         div.card__picture-overlay
                         - const imgURL = JSON.stringify(session.image);
-                        - const image = session.image[0]; console.log(image);
+                        - const image = session.image[0];
                         img.card__picture-img(src=`img/sessions/${image}` alt=`${session.name}`)
                     h3.heading-tertirary
                         span= session.name

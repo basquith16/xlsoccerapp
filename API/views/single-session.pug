@@ -47,7 +47,11 @@ block content
                             img.overview-box__img(src=`/img/users/${trainer.photo}.jpg`, alt='Coach')
                             span.overview-box__text= `${JSON.stringify(trainer, ['name']).replace(/"name/g, "").replace(/[`()|;:'",\{\}\[\]\\\/]/gi, '')}`
                     .overview-box__detail
-                        button.btn.btn--red.span-all-rows#buy-session(data-session-id=`${session.id}`) Register
+                        if !user
+                            h3.loginWarning Please Login to Register 
+                        
+                        if user
+                            button.btn.btn--red.span-all-rows#buy-session(data-session-id=`${session.id}`) Register
 
         .description-box
             h2.heading-secondary.ma-bt-lg About this session

@@ -669,7 +669,7 @@ img.soccer-ball {
     to(#6B1B1C)
   );
   background-image: linear-gradient(to right bottom, #d2d1d0, #6B1B1C);
-  opacity: 0.6;
+  opacity: 0;
 }
 .card__picture-img {
   -o-object-fit: cover;
@@ -748,6 +748,16 @@ img.soccer-ball {
   -ms-flex-item-align: center;
   align-self: center;
 }
+
+.loginWarning {
+  margin-top: 20px;
+  background: #6B1B1C;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+
 
 .error {
   position: absolute;
@@ -1242,6 +1252,7 @@ section.map {
 }
 .players__card {
   width: 35%;
+  min-width: 350px;
   padding: 20px;
   background-color: #f7f7f7;
   border-radius: 3px;
@@ -2088,6 +2099,12 @@ p {
 @media (max-width: 767px) {
   .main {
     padding: 0;
+  }
+  .login-form {
+    padding: 5rem 2rem;
+  }
+  .registration-form {
+    padding: 5rem 1rem;
   }
   h1.page-title {
     font-size: 2rem;

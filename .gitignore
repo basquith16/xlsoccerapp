@@ -2,3 +2,4 @@ API/node_modules/
 API/*.env
 API/.cache/
 API/.parcel-cache/
+node_modules

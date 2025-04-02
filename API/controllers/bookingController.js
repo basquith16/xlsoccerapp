@@ -37,11 +37,16 @@ exports.getCheckout = catchAsync(async (req, res, next) => {
 });
 
 exports.createBookingCheckout = catchAsync (async (req, res, next) => {
-    // Temporary!! Insecure because only need URL to book without paying
-    const { session, user, price}= await req.query;
+    // Temporary!! Insecure because only need URL to book without paying    
+    const { session, user, price, roster}= await req.query;
+
+    const rosterCount = await roster - 1;
 
     if(!session && !user && !price) return next();
+
+    await Session.findOneAndUpdate({ _id: session }, {rosterLimit: rosterCount});
     await Booking.create({ session, user, price});
+
 
     res.redirect(req.originalUrl.split('?')[0]);
 });

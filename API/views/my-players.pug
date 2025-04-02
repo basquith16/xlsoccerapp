@@ -4,33 +4,69 @@ block content
         main.main
             .user-view
                 include _account-menu
-                .user-view_container
-                    .user-view__content.myPlayers.hidden
-                    h2.heading-secondary.players-heading My Players
-                    if !getPlayers == `${user.id}`
-                        h6 You do not have any players assigned to your account
-                    else
-                        section.section-players
-                                .players
-                                    each player in getPlayers
-                                        if player.account == user.id
-                                            .players__card
-                                                span.profImg(style=`background: url(/img/players/${player.profImg}), #fff;`)
-                                                h6.players__user= `${player.name}`
-                                                - var birthDate = player.birthDate;
-                                                - var birthYear = (birthDate.substr((birthDate.length - 4) * 1));
-                                                h6.players__birthYear= `${birthYear}`
-                                                img(class='player-banner' src='/img/players/player-banner.jpg')
-                                                if !player.waiverSigned
-                                                    h6.players__waiver.false NEEDS TO SIGN WAIVER
-                                                else
-                                                    h6.players__waiver.true Waiver Signed
-                                                
-                                                if !player.teams.length > 0
-                                                    h6.teams__heading Current Enrollments
-                                                    h6.players__teams Not currently enrolled
-                                                else
-                                                    each team in getSessions
-                                                        if (player.teams).includes(team.id)
+                .tabs
+                    input#tabone.radiotab(checked="checked" type="radio" tabindex="1" name="tabs")
+                    label.label(for="tabone") My Players
+                    .panel(tabindex="1")
+                        .user-view_container
+                            .user-view__content.myPlayers.hidden
+                            h2.heading-secondary.players-heading My Players
+                            if !getPlayers == `${user.id}`
+                                h6 You do not have any players assigned to your account
+                            else
+                                section.section-players
+                                        .players
+                                            each player in getPlayers
+                                                if player.account == user.id
+                                                    .players__card
+                                                        span.profImg(style=`background: url(/img/players/${player.profImg}), #fff;`)
+                                                        h6.players__user= `${player.name}`
+                                                        - var birthDate = player.birthDate;
+                                                        - var birthYear = (birthDate.substr((birthDate.length - 4) * 1));
+                                                        h6.players__birthYear= `${birthYear}`
+                                                        img(class='player-banner' src='/img/players/player-banner.jpg')
+                                                        if !player.waiverSigned
+                                                            h6.players__waiver.false NEEDS WAIVER
+                                                        else
+                                                            h6.players__waiver.true Waiver Signed
+                                                        
+                                                        if !player.teams.length > 0
                                                             h6.teams__heading Current Enrollments
-                                                            h6.players__teams= `${team.name}`
+                                                            h6.players__teams Not currently enrolled
+                                                        else
+                                                            each team in getSessions
+                                                                if (player.teams).includes(team.id)
+                                                                    h6.teams__heading Current Enrollments
+                                                                    h6.players__teams= `${team.name}`
+                    
+                    input#tabtwo.radiotab(type="radio" name="tabs" tabindex="1")
+                    label.label(for="tabtwo") Add a Player
+                    .panel(tabindex="1")
+                        .user-view__content.managePlayers
+                            .user-view__form-container
+                                h1.heading Add a Player
+                                br
+                                form.form.form-player-data
+                                    .form__group
+                                        label.form__label(for='playerName') Name
+                                        input#playerName.form__input(type='text', value='', required)
+                                    .form__group
+                                        label.form__label(for='birthDate') Birthday
+                                        input#birthDate.form__input(type='date', value='', required)
+                                    .form__group
+                                        label.form__label(for='gender') Gender
+                                        select#gender
+                                            option(value='male') Male
+                                            option(value='female') Female
+
+                                    .photo_uploads
+                                        .form__group.form__photo-upload
+                                            input.form__upload(type='file' accept='image/*' id='player-image' name='image')
+                                            label.playerImage-upload-label(for='player-image') Choose Profile Image
+                                            span.playerImage-upload-success.hidden Upload successful!
+                                    
+                                    .form__group.hidden
+                                        input#account(type='text', value=`${user.id}`)
+
+                                    .form__group.right
+                                        button#createPlayer.btn.btn--small.btn--red Create Player

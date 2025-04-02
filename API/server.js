@@ -37,3 +37,11 @@ process.on('unhandledRejection', err => {
     });
     // TODO - restart app, do not leave hanging
 });
+
+// Heroku Specific handling to shutdown gracefully
+process.on('SIGTERM', () => {
+    console.log('SIGTERM RECEIVED, Shutting Down gracefully');
+    server.close(() => {
+        console.log('Process terminated');
+    });
+});

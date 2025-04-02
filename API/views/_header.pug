@@ -14,16 +14,17 @@ div.header_top
 
 div.header_bottom.flex
     logo
-        img(src='/img/logo.webp' alt='XL Soccer World Logo')
+        a(href='/')
+            img(src='/img/logo.webp' alt='XL Soccer World Logo')
     nav.nav.hidden-sm.hidden-xs
         ul.inner-nav.flex
             li: a(href='/') HOME 
             li: a(href='/sessions') Leagues 
-            li: a(href='/sessions?birthYear[gte]=2005') Youth Sports
-            li: a(href='/sessions?sport=camp') Camps 
-            li: a(href='#') Birthdays & Events
-            li: a(href='/sessions?birthYear[gte]=2005') Youth Academy
-            li: a(href='#') More
+            li: a(href='#' Youth Sports)
+            li: a(href='#' style='color:#a6a6a6') Camps 
+            li: a(href='#' style='color:#a6a6a6') Birthdays & Events
+            li: a(href='#' style='color:#a6a6a6') Youth Academy
+            li: a(href='#' style='color:#a6a6a6') More
 
     nav.menu--right.visible-sm.visible-xs(role="navigation")
         .menuToggle
@@ -34,8 +35,3 @@ div.header_bottom.flex
             ul.menuItem
                 li: a(href='/') HOME 
                 li: a(href='/sessions') Leagues 
-                li: a(href='/sessions?birthYear[gte]=2005') Youth Sports
-                li: a(href='/sessions?sport=camp') Camps 
-                li: a(href='#') Birthdays & Events
-                li: a(href='/sessions?birthYear[gte]=2005') Youth Academy
-                li: a(href='#') More

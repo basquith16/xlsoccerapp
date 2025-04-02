@@ -7,12 +7,12 @@ const helmet = require('helmet');
 const hpp = require('hpp');
 const mongoSanitize = require('express-mongo-sanitize');
 const xss = require('xss-clean');
-const csp = require('express-csp');
+// const csp = require('express-csp');
 const cookieParser = require('cookie-parser');
 const AppError = require('./utils/appError');
 const globalErrorHandler = require('./controllers/errorController');
 const compression = require('compression');
-
+const cors = require('cors');
 // Set up Pug
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
@@ -25,11 +25,31 @@ const sessionRouter = require('./routes/sessionRoutes');
 const playerRouter = require('./routes/playerRoutes');
 const reviewRouter = require('./routes/reviewRoutes');
 const bookingRouter = require('./routes/bookingRoutes');
+const bookingController = require('./controllers/bookingController');
+
 
 // MIDDLEWARE
 
 // Serving static files
 app.use(express.static(path.join(__dirname, '/public')));
+
+app.enable('trust proxy');
+
+app.use(cors());
+
+// Allow PATCH, PUT and other non-simple requests
+// app.options('*', cors());
+
+// To allow complex requests at only specific URLS
+// app.options('/api/v1/sessions/:id', cors());
+
+// Example Use Case for only allowing certain URLs to access API
+// API at api.literallypossible.io with xlnona trying to access
+app.use(cors({
+  origin: 'https://www.xlnona.com',
+  credentials: true,
+  headers:['Content-Length', 'Content-Type', 'Authorization']
+}));
 
 // Security HTTP headers
 app.use(
@@ -139,6 +159,7 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
+// app.post('/webhook-checkout', express.raw({type: 'application/json'}), bookingController.webhookCheckout);
 
 // Mount Routes
 app.use('/', viewRouter);
