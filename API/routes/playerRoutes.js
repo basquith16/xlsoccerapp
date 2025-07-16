@@ -1,25 +1,19 @@
-const express = require('express');
-const playerController = require('../controllers/playerController');
-const authController = require('../controllers/authController');
-const userController = require('../controllers/userController');
+import express from 'express';
+import { getAllPlayers, getPlayer, addPlayer, updatePlayer, deletePlayer } from '../controllers/playerController.js';
+import { protect } from '../controllers/authController.js';
 
+const router = express.Router();
 
-const router = express.Router({ mergeParams: true });
+// Protect all routes after this middleware
+router.use(protect);
 
-// Everything below here is AUTH protected
-router.use(authController.protect);
-
-// Routes
 router.route('/')
-    .get(playerController.getAllPlayers)
-    .post(playerController.setSessionUserIds, playerController.addPlayer);
+  .get(getAllPlayers)
+  .post(addPlayer);
 
-// Everything below here is restricted to admin and users
-router.use(authController.restrictTo('admin', 'user'));
-    
 router.route('/:id')
-    .get(playerController.getPlayer)
-    .patch(playerController.updatePlayer)
-    .delete(playerController.deletePlayer);
+  .get(getPlayer)
+  .patch(updatePlayer)
+  .delete(deletePlayer);
 
-module.exports = router;
+export default router;

@@ -1,8 +1,8 @@
-const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
-const APIFeatures = require('../utils/apiFeatures');
+import catchAsync from '../utils/catchAsync.js';
+import AppError from '../utils/appError.js';
+import APIFeatures from '../utils/apiFeatures.js';
 
-exports.deleteOne = Model =>
+export const deleteOne = Model =>
   catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndDelete(req.params.id);
 
@@ -16,7 +16,7 @@ exports.deleteOne = Model =>
     });
   });
 
-exports.updateOne = Model =>
+export const updateOne = Model =>
   catchAsync(async (req, res, next) => {
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
@@ -35,7 +35,7 @@ exports.updateOne = Model =>
     });
   });
 
-exports.createOne = Model =>
+export const createOne = Model =>
   catchAsync(async (req, res, next) => {
     const doc = await Model.create(req.body);
 
@@ -47,7 +47,7 @@ exports.createOne = Model =>
     });
   });
 
-exports.getOne = (Model, popOptions) => catchAsync(async (req, res, next) => {
+export const getOne = (Model, popOptions) => catchAsync(async (req, res, next) => {
     let query = Model.findById(req.params.id);
     if(popOptions) query = query.populate(popOptions);
 
@@ -64,7 +64,7 @@ exports.getOne = (Model, popOptions) => catchAsync(async (req, res, next) => {
     });
 });
 
-exports.getAll = Model => catchAsync(async (req, res, next) => {
+export const getAll = (Model, dataKey = 'data') => catchAsync(async (req, res, next) => {
     // Workaround to allow for nested GET players on specific User 
     let filter = {};
     if (req.params.userId) filter = { account: req.params.userId};
@@ -84,8 +84,7 @@ exports.getAll = Model => catchAsync(async (req, res, next) => {
         requestedAt: req.requestTime, 
         results: doc.length,
         data: {
-            data: doc
+            [dataKey]: doc
         }
     });
-
 });

@@ -1,30 +1,31 @@
-const express = require('express');
-const router = express.Router();
-const sessionController = require('../controllers/sessionController');
-const authController = require('../controllers/authController');
+import express from 'express';
+import { getAllSessions, addSession, getSession, getSessionBySlug, updateSession, deleteSession, uploadSessionPhotos, resizeSessionPhotos } from '../controllers/sessionController.js';
+import { protect, restrictTo } from '../controllers/authController.js';
 
+const router = express.Router();
+
+// Public routes (no authentication required)
+router.route('/')
+    .get(getAllSessions);
+
+router.route('/slug/:slug')
+    .get(getSessionBySlug);
 
 // Everything below here is AUTH protected
-router.use(authController.protect);
+router.use(protect);
 
-// Routes
-router.route('/')
-    .get(sessionController.getAllSessions);
-
-    
 // Everything below here is restricted to admin
-router.use(authController.restrictTo('admin'));
+router.use(restrictTo('admin'));
 
 router.route('/')
-    .post(sessionController.addSession);
+    .post(addSession);
 
 router.route('/:id')
-    .get(sessionController.getSession)
-    .patch(sessionController.uploadSessionPhotos, sessionController.resizeSessionPhotos, sessionController.updateSession)
-    .delete(sessionController.deleteSession);
+    .get(getSession)
+    .patch(uploadSessionPhotos, resizeSessionPhotos, updateSession)
+    .delete(deleteSession);
 
-module.exports = router;
-
+export default router;
 
 // Not useful for this app
 // router.route('/top-5-cheap')

@@ -1,10 +1,9 @@
-const Session = require('../models/sessionModel');
-const AppError = require('../utils/appError');
-const factory = require('./handlerFactory');
-const multer = require('multer');
-const sharp = require('sharp');
-const catchAsync = require('../utils/catchAsync');
-
+import Session from '../models/sessionModel.js';
+import AppError from '../utils/appError.js';
+import { getAll, getOne, createOne, updateOne, deleteOne } from './handlerFactory.js';
+import multer from 'multer';
+import sharp from 'sharp';
+import catchAsync from '../utils/catchAsync.js';
 
 // Helper Functions
 const multerStorage = multer.memoryStorage();
@@ -21,14 +20,13 @@ const upload = multer({
      fileFilter: multerFilter
 });
 
-
 // Handlers
-exports.uploadSessionPhotos = upload.fields([
+export const uploadSessionPhotos = upload.fields([
     {name: 'image', maxCount: 1},
     {name: 'profileImages', maxCount: 3}
 ]);
 
-exports.resizeSessionPhotos = catchAsync( async(req, res, next) => {
+export const resizeSessionPhotos = catchAsync( async(req, res, next) => {
     if (!req.files.image && !req.files.profileImages) return next();
 
     if (req.files.image) {
@@ -58,8 +56,22 @@ exports.resizeSessionPhotos = catchAsync( async(req, res, next) => {
 });
 
 // Functions found in handlerFactory.js
-exports.getAllSessions = factory.getAll(Session);
-exports.getSession = factory.getOne(Session, {path: 'roster'}, 'name birthYear');
-exports.addSession = factory.createOne(Session);
-exports.updateSession = factory.updateOne(Session);  
-exports.deleteSession = factory.deleteOne(Session);
+export const getAllSessions = getAll(Session, 'sessions');
+export const getSession = getOne(Session, {path: 'roster'}, 'name birthYear');
+export const getSessionBySlug = catchAsync(async (req, res, next) => {
+    const session = await Session.findOne({ slug: req.params.slug }).populate('roster', 'name birthYear');
+    
+    if (!session) {
+        return next(new AppError('No session found with that slug', 404));
+    }
+    
+    res.status(200).json({
+        status: 'success',
+        data: {
+            session: session
+        }
+    });
+});
+export const addSession = createOne(Session);
+export const updateSession = updateOne(Session);  
+export const deleteSession = deleteOne(Session);

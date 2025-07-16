@@ -1,9 +1,9 @@
-const User = require('../models/userModel');
-const AppError = require('../utils/appError');
-const multer = require('multer');
-const sharp = require('sharp');
-const factory = require('./handlerFactory');
-const catchAsync = require('../utils/catchAsync');
+import User from '../models/userModel.js';
+import AppError from '../utils/appError.js';
+import multer from 'multer';
+import sharp from 'sharp';
+import { getAll, getOne, updateOne, deleteOne } from './handlerFactory.js';
+import catchAsync from '../utils/catchAsync.js';
 
 // Helper Functions
 const filterObj = (obj, ...allowedFields) => {
@@ -28,11 +28,10 @@ const upload = multer({
      fileFilter: multerFilter
 });
 
-
 // Handlers
-exports.uploadUserPhoto = upload.single('photo');
+export const uploadUserPhoto = upload.single('photo');
 
-exports.resizeUserPhoto = catchAsync( async(req, res, next) => {
+export const resizeUserPhoto = catchAsync( async(req, res, next) => {
     if (!req.file) return next();
 
     req.file.filename = `user-${req.user.id}-${Date.now()}.jpeg`;
@@ -45,11 +44,13 @@ exports.resizeUserPhoto = catchAsync( async(req, res, next) => {
 
     next();
 });
-exports.getMe = (req, res, next) => {
+
+export const getMe = (req, res, next) => {
     req.params.id = req.user.id;
     next();
 }
-exports.updateMe = catchAsync(async(req, res, next) => {
+
+export const updateMe = catchAsync(async(req, res, next) => {
 
     // Create error if user POSTs password data
     if (req.body.password || req.body.passwordConfirm) {
@@ -74,7 +75,7 @@ exports.updateMe = catchAsync(async(req, res, next) => {
     }); 
 });
 
-exports.deleteMe = catchAsync(async(req, res, next) => {
+export const deleteMe = catchAsync(async(req, res, next) => {
     // Deactivate Account
     await User.findByIdAndUpdate(req.user.id, { active: false });
     
@@ -85,8 +86,8 @@ exports.deleteMe = catchAsync(async(req, res, next) => {
 });
 
 // Factory Functions
-exports.getAllUsers = factory.getAll(User);
-exports.getUser = factory.getOne(User, {path: 'players'}, 'name birthYear teams');
-exports.updateUser = factory.updateOne(User);
-exports.deleteUser = factory.deleteOne(User);
+export const getAllUsers = getAll(User);
+export const getUser = getOne(User, {path: 'players'}, 'name birthYear teams');
+export const updateUser = updateOne(User);
+export const deleteUser = deleteOne(User);
 

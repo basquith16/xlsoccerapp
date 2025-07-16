@@ -1,30 +1,29 @@
-const express = require('express');
-const reviewController = require('./../controllers/reviewController');
-const authController = require('./../controllers/authController');
+import express from 'express';
+import { getAllReviews, getReview, createReview, updateReview, deleteReview, setTourUserIds } from '../controllers/reviewController.js';
+import { protect, restrictTo } from '../controllers/authController.js';
 
 const router = express.Router({ mergeParams: true });
 
-router.use(authController.protect);
+// Protect all routes after this middleware
+router.use(protect);
 
-router
-  .route('/')
-  .get(reviewController.getAllReviews)
+router.route('/')
+  .get(getAllReviews)
   .post(
-    authController.restrictTo('user'),
-    reviewController.setTourUserIds,
-    reviewController.createReview
+    restrictTo('user'),
+    setTourUserIds,
+    createReview
   );
 
-router
-  .route('/:id')
-  .get(reviewController.getReview)
+router.route('/:id')
+  .get(getReview)
   .patch(
-    authController.restrictTo('user', 'admin'),
-    reviewController.updateReview
+    restrictTo('user', 'admin'),
+    updateReview
   )
   .delete(
-    authController.restrictTo('user', 'admin'),
-    reviewController.deleteReview
+    restrictTo('user', 'admin'),
+    deleteReview
   );
 
-module.exports = router;
+export default router;

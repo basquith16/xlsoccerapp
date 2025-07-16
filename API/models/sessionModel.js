@@ -1,7 +1,7 @@
-const mongoose = require('mongoose');
-const slugify = require('slugify');
-const validator = require('validator');
-const User = require('./userModel');
+import mongoose from 'mongoose';
+import slugify from 'slugify';
+import validator from 'validator';
+import User from './userModel.js';
 
 // START Mongoose Schema
 const sessionSchema = new mongoose.Schema({
@@ -156,4 +156,4 @@ sessionSchema.pre('aggregate', function(next) {
 // START Convert Schema to Model
 const Session = mongoose.model('Session', sessionSchema);
 
-module.exports = Session;
+export default Session;

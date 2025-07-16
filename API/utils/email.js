@@ -1,9 +1,8 @@
-const nodemailer = require('nodemailer');
-const pug = require('pug');
-const {convert} = require('html-to-text');
-const mg = require('nodemailer-mailgun-transport');
+import nodemailer from 'nodemailer';
+import {convert} from 'html-to-text';
+import mg from 'nodemailer-mailgun-transport';
 
-module.exports = class Email {
+export default class Email {
   constructor(user, url) {
     this.to = user.email;
     this.firstName = user.name.split(' ')[0];
@@ -40,21 +39,14 @@ module.exports = class Email {
   }
 
   // Send the actual email
-  async send(template, subject) {
-    // 1) Render HTML based on a pug template
-    const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
-      firstName: this.firstName,
-      url: this.url,
-      subject
-    });
-
+  async send(subject, htmlContent) {
     // 2) Define email options
     const mailOptions = {
       from: this.from,
       to: this.to,
       subject,
-      html,
-      text: convert(html)
+      html: htmlContent,
+      text: convert(htmlContent)
     };
 
     // 3) Create a transport and send email
@@ -63,44 +55,32 @@ module.exports = class Email {
 
   async sendWelcome() {
     try {
-      await this.send('welcome', 'Welcome to the XL Family!');
+      const htmlContent = `
+        <h1>Welcome to the XL Family!</h1>
+        <p>Hi ${this.firstName},</p>
+        <p>Welcome to XL Soccer! We're excited to have you join our community.</p>
+        <p>You can now book sessions and manage your account.</p>
+        <p>Best regards,<br>The XL Team</p>
+      `;
+      await this.send('Welcome to the XL Family!', htmlContent);
     } catch(err) {
       console.log(err)
     }
   }
 
   async sendPasswordReset() {
+    const htmlContent = `
+      <h1>Password Reset</h1>
+      <p>Hi ${this.firstName},</p>
+      <p>You requested a password reset. Click the link below to reset your password:</p>
+      <p><a href="${this.url}">Reset Password</a></p>
+      <p>This link is valid for only 10 minutes.</p>
+      <p>If you didn't request this, please ignore this email.</p>
+      <p>Best regards,<br>The XL Team</p>
+    `;
     await this.send(
-      'passwordReset',
-      'Your password reset token (valid for only 10 minutes)'
+      'Your password reset token (valid for only 10 minutes)',
+      htmlContent
     );
   }
 };
-
-// const sendEmail = async options => {
-//   // 1) Create a transporter
-//   const transporter = nodemailer.createTransport({
-//     host: process.env.EMAIL_HOST,
-//     port: process.env.EMAIL_PORT,
-//     logger: true,
-//     secure: false,
-//     auth: {
-//       user: process.env.EMAIL_USERNAME,
-//       pass: process.env.EMAIL_PASSWORD
-//     }
-//   });
-
-//   // 2) Define the email options
-//   const mailOptions = {
-//     from: `Brian Asquith <${process.env.EMAIL_FROM}>`,
-//     to: options.email,
-//     subject: options.subject,
-//     text: options.message
-//     // html:
-//   };
-
-//   // 3) Actually send the email
-//   await transporter.sendMail(mailOptions);
-// };
-
-// module.exports = sendEmail;

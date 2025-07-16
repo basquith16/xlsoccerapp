@@ -1,5 +1,7 @@
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+import app from './app.js';
+
 dotenv.config({path: './config.env'});
 
 process.on('uncaughtException', err => {
@@ -9,21 +11,21 @@ process.on('uncaughtException', err => {
     // TODO - restart app, do not leave hanging
 });
 
-
 // Connect to database with mongoose
 const DB = process.env.DATABASE.replace(
     '<PASSWORD>',
     process.env.DATABASE_PASSWORD
 );
-mongoose.connect(DB, {
-    useCreateIndex: true,
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    useFindAndModify: false
-}).then(con => { console.log('DB connection successful'); })
+
+try {
+    await mongoose.connect(DB);
+    console.log('DB connection successful');
+} catch (error) {
+    console.error('DB connection failed:', error);
+    process.exit(1);
+}
 
 // Server    
-const app = require('./app');
 const port = process.env.PORT || 3000;
 const server = app.listen(port, () => {
     console.log(`App running on port ${port}`);

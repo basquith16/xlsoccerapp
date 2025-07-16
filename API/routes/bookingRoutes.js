@@ -1,25 +1,24 @@
-const express = require('express');
-const bookingController = require('../controllers/bookingController');
-const authController = require('../controllers/authController');
+import express from 'express';
+import { getCheckoutSession, getAllBookings, createBooking, getBooking, updateBooking, deleteBooking } from '../controllers/bookingController.js';
+import { protect, restrictTo } from '../controllers/authController.js';
 
 const router = express.Router();
 
-router.use(authController.protect);
-router.get('/checkout/:sessionId', bookingController.getCheckout);
+router.use(protect);
 
+router.get('/checkout-session/:sessionId', getCheckoutSession);
 
-router.use(authController.restrictTo('admin', 'coach'));
-
-router
-.route('/')
-.get(bookingController.getAllBookings)
-.post(bookingController.createBookingCheckout);
+router.use(restrictTo('admin', 'lead-guide'));
 
 router
-.route('/:id')
-.get(bookingController.getBooking)
-.patch(bookingController.updateBooking)
-.delete(bookingController.deleteBooking);
+  .route('/')
+  .get(getAllBookings)
+  .post(createBooking);
 
+router
+  .route('/:id')
+  .get(getBooking)
+  .patch(updateBooking)
+  .delete(deleteBooking);
 
-module.exports = router;
+export default router;

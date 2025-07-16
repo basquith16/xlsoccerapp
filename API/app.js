@@ -1,35 +1,49 @@
-const path = require('path');
-const express = require('express');
-const app = express();
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-const helmet = require('helmet');
-const hpp = require('hpp');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss-clean');
-const csp = require('express-csp');
-const cookieParser = require('cookie-parser');
-const AppError = require('./utils/appError');
-const globalErrorHandler = require('./controllers/errorController');
-const compression = require('compression');
+import path from 'path';
+import express from 'express';
+import morgan from 'morgan';
+import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
+import hpp from 'hpp';
+import mongoSanitize from 'express-mongo-sanitize';
+import cookieParser from 'cookie-parser';
+import compression from 'compression';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// Set up Pug
-app.set('view engine', 'pug');
-app.set('views', path.join(__dirname, 'views'));
-
+import AppError from './utils/appError.js';
+import globalErrorHandler from './controllers/errorController.js';
 
 // Import Routers
-const viewRouter = require('./routes/viewRoutes');
-const userRouter = require('./routes/userRoutes');
-const sessionRouter = require('./routes/sessionRoutes');
-const playerRouter = require('./routes/playerRoutes');
-const reviewRouter = require('./routes/reviewRoutes');
-const bookingRouter = require('./routes/bookingRoutes');
+import userRouter from './routes/userRoutes.js';
+import sessionRouter from './routes/sessionRoutes.js';
+import playerRouter from './routes/playerRoutes.js';
+import reviewRouter from './routes/reviewRoutes.js';
+import bookingRouter from './routes/bookingRoutes.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+const app = express();
 
 // MIDDLEWARE
 
 // Serving static files
 app.use(express.static(path.join(__dirname, '/public')));
+
+// CORS configuration - must come before helmet
+app.use(function (req, res, next) {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,PATCH,DELETE");
+  res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization");
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
 
 // Security HTTP headers
 app.use(
@@ -83,14 +97,6 @@ app.use(
   })
 );
 
-app.use(function (req, res, next) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT");
-  res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin,Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization");
-  next();
-});
-
 if(process.env.NODE_ENV === 'development') {
     app.use(morgan('dev'));
 }
@@ -99,11 +105,8 @@ if(process.env.NODE_ENV === 'development') {
 app.use(express.json({ limit: '10kb' }));
 app.use(cookieParser());
 
-// Data Sanitization against NoSQL query injejction
+// Data Sanitization against NoSQL query injection
 app.use(mongoSanitize());
-
-// Data Sanitization against XSS
-app.use(xss());
 
 // Prevent Parameter Pollution
 app.use(
@@ -139,9 +142,7 @@ const limiter = rateLimit({
 
 app.use('/api', limiter);
 
-
 // Mount Routes
-app.use('/', viewRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/sessions', sessionRouter);
 app.use('/api/v1/players', playerRouter);
@@ -156,4 +157,4 @@ app.all('*', (req, res, next) => {
 // 4 parameters signals that this is error handling middleware
 app.use(globalErrorHandler);
 
-module.exports = app;
+export default app;

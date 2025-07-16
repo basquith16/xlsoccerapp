@@ -1,12 +1,14 @@
-const Session = require('../models/sessionModel');
-const update = require('../controllers/sessionController');
-const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
-const User = require('../models/userModel');
-const Booking = require('../models/bookingModel');
-const Player = require('../models/playerModel');
-const Review = require('../models/reviewModel');
-const stripe = require('stripe')('sk_test_51NctyzC5wZsDYstkYfYfCLqAQjwbPZd3xEPKbcpBSzovp2sFfb5O4lriJs8GDHJYxxPsLPAsXsrYHcF7FkCxxZsX00ZbNFKR3s');
+import Session from '../models/sessionModel.js';
+import update from '../controllers/sessionController.js';
+import catchAsync from '../utils/catchAsync.js';
+import AppError from '../utils/appError.js';
+import User from '../models/userModel.js';
+import Booking from '../models/bookingModel.js';
+import Player from '../models/playerModel.js';
+import Review from '../models/reviewModel.js';
+import stripe from 'stripe';
+
+const stripeInstance = stripe('sk_test_51NctyzC5wZsDYstkYfYfCLqAQjwbPZd3xEPKbcpBSzovp2sFfb5O4lriJs8GDHJYxxPsLPAsXsrYHcF7FkCxxZsX00ZbNFKR3s');
 
 exports.getHomepage = catchAsync(async (req, res, next) => {
     const review = await Review.find();
@@ -121,10 +123,10 @@ exports.getMyPlayers = catchAsync(async (req, res, next) => {
 });
 
 exports.getMyInvoices = catchAsync(async (req, res, next) => {
-    const invoiceList = await stripe.invoices.list({
+    const invoiceList = await stripeInstance.invoices.list({
         limit: 10,
     });
-    const customer = await stripe.customers.retrieve(
+    const customer = await stripeInstance.customers.retrieve(
         'cus_OQciyRvUX1Tk9z'
       );
 

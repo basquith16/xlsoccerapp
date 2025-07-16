@@ -1,40 +1,34 @@
-const express = require('express');
+import express from 'express';
+import { getMe, getUser, updateMe, deleteMe, getAllUsers, updateUser, deleteUser, uploadUserPhoto, resizeUserPhoto } from '../controllers/userController.js';
+import { signup, login, logout, forgotPassword, resetPassword, protect, updatePassword, restrictTo } from '../controllers/authController.js';
+
 const router = express.Router();
-const userController = require('../controllers/userController');
-const authController = require('../controllers/authController');
-const playerRouter = require('./playerRoutes');
 
+router.post('/signup', signup);
+router.post('/login', login);
+router.get('/logout', logout);
 
+router.post('/forgotPassword', forgotPassword);
+router.patch('/resetPassword/:token', resetPassword);
 
-// Mounting player router to automatially add them to current logged in user
-router.use('/:userId/players', playerRouter);
+// Protect all routes after this middleware
+router.use(protect);
 
-// Routes
-router.post('/signup', authController.signup)
-router.post('/login', authController.login)
-router.get('/logout', authController.logout)
+router.patch('/updateMyPassword', updatePassword);
+router.get('/me', getMe, getUser);
+router.patch('/updateMyAccount', uploadUserPhoto, resizeUserPhoto, updateMe);
+router.delete('/deleteMe', deleteMe);
 
-// Password reset/update
-router.post('/forgotPassword', authController.forgotPassword)
-router.patch('/resetPassword/:token', authController.resetPassword)
+router.use(restrictTo('admin'));
 
+router
+  .route('/')
+  .get(getAllUsers);
 
-// Everything below here is AUTH protected
-router.use(authController.protect);
+router
+  .route('/:id')
+  .get(getUser)
+  .patch(updateUser)
+  .delete(deleteUser);
 
-router.patch('/updateMyPassword', authController.updatePassword)
-
-// User controlled updates/queries
-router.get('/myAccount', userController.getMe, userController.getUser)
-router.patch('/updateMyAccount', userController.uploadUserPhoto, userController.resizeUserPhoto, userController.updateMe)
-router.delete('/deleteMyAccount', userController.deleteMe)
-
-router.route('/')
-    .get(userController.getAllUsers)
-
-router.route('/:id')
-    .get(userController.getUser)
-    .patch(userController.updateUser)
-    .delete(userController.deleteUser);
-
-module.exports = router;
+export default router;

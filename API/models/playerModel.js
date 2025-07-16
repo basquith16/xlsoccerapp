@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 // START Mongoose Schema
 const playerSchema = new mongoose.Schema({
@@ -45,7 +45,7 @@ const playerSchema = new mongoose.Schema({
 // START Convert Schema to Model
 const Player = mongoose.model('Player', playerSchema);
 
-module.exports = Player; 
+export default Player;
 
 // Document Middleware
 playerSchema.pre('save', function(next) {

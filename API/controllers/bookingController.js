@@ -1,13 +1,15 @@
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const factory = require('./handlerFactory');
-const catchAsync = require('./../utils/catchAsync');
-const Session = require('../models/sessionModel');
-const Booking = require('../models/bookingModel');
+import stripe from 'stripe';
+import { createOne, getAll, getOne, updateOne, deleteOne } from './handlerFactory.js';
+import catchAsync from '../utils/catchAsync.js';
+import Session from '../models/sessionModel.js';
+import Booking from '../models/bookingModel.js';
 
-exports.getCheckout = catchAsync(async (req, res, next) => {
+const stripeInstance = stripe(process.env.STRIPE_SECRET_KEY);
+
+export const getCheckoutSession = catchAsync(async (req, res, next) => {
     const session = await Session.findById(req.params.sessionId);
 
-    const checkout = await stripe.checkout.sessions.create({
+    const checkout = await stripeInstance.checkout.sessions.create({
         payment_method_types: ['card'],
         success_url: `${req.protocol}://${req.get('host')}/thank-you?session=${req.params.sessionId}&user=${req.user.id}&price=${session.price}&roster=${session.rosterLimit}`,
         cancel_url: `${req.protocol}://${req.get('host')}/session/${session.slug}`,
@@ -36,20 +38,18 @@ exports.getCheckout = catchAsync(async (req, res, next) => {
     });
 });
 
-exports.createBookingCheckout = catchAsync (async (req, res, next) => {
+export const createBookingCheckout = catchAsync(async (req, res, next) => {
     // Temporary!! Insecure because only need URL to book without paying
-    const { session, user, price}= await req.query;
+    const { session, user, price } = req.query;
 
     if(!session && !user && !price) return next();
-    await Booking.create({ session, user, price});
+    await Booking.create({ session, user, price });
 
     res.redirect(req.originalUrl.split('?')[0]);
 });
 
-exports.createBooking = factory.createOne(Booking);
-exports.getAllBookings = factory.getAll(Booking);
-exports.getBooking = factory.getOne(Booking);
-exports.updateBooking = factory.updateOne(Booking);
-exports.deleteBooking = factory.deleteOne(Booking);
-
-rubber duck
+export const createBooking = createOne(Booking);
+export const getAllBookings = getAll(Booking);
+export const getBooking = getOne(Booking);
+export const updateBooking = updateOne(Booking);
+export const deleteBooking = deleteOne(Booking);

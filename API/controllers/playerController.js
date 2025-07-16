@@ -1,19 +1,18 @@
-const Player = require('../models/playerModel');
-const factory = require('./handlerFactory');
-// const catchAsync = require('../utils/catchAsync');
-// const AppError = require('../utils/appError');
-// const APIFeatures = require('../utils/apiFeatures');
+import Player from '../models/playerModel.js';
+import { getAll, getOne, createOne, updateOne, deleteOne } from './handlerFactory.js';
+// import catchAsync from '../utils/catchAsync';
+// import AppError from '../utils/appError';
+// import APIFeatures from '../utils/apiFeatures';
 
-exports.setSessionUserIds = (req, res, next) => {
+export const setSessionUserIds = (req, res, next) => {
     // Allow nested routes
-    if(!req.body.account) req.body.account = req.params.userId;
-    if(!req.body.teams) req.body.teams = req.params.teamsId;
-
+    if (!req.body.session) req.body.session = req.params.sessionId;
+    if (!req.body.user) req.body.user = req.user.id;
     next();
-}
+};
 
-exports.getAllPlayers = factory.getAll(Player);
-exports.getPlayer = factory.getOne(Player);
-exports.addPlayer = factory.createOne(Player);
-exports.updatePlayer = factory.updateOne(Player);
-exports.deletePlayer = factory.deleteOne(Player);
+export const getAllPlayers = getAll(Player);
+export const getPlayer = getOne(Player);
+export const addPlayer = createOne(Player);
+export const updatePlayer = updateOne(Player);
+export const deletePlayer = deleteOne(Player);
