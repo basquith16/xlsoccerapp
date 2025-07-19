@@ -1,14 +1,14 @@
 {
   "name": "xlsoccerapp",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "XL Soccer App - Full Stack Application",
   "scripts": {
-    "build": "cd API && npm run build",
+    "build": "cd API && npm install && npm run build",
     "start": "cd API && npm start",
     "dev": "cd API && npm run dev",
-    "postinstall": "cd API && npm install && npm run build"
+    "postinstall": "cd API && npm install"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }

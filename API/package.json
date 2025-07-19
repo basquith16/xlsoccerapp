@@ -1,11 +1,11 @@
 {
   "name": "nasessions-api",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Building an API",
   "main": "dist/src/server.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --project tsconfig.json",
     "start": "node dist/src/server.js",
     "dev": "tsx src/server.ts",
     "start:prod": "NODE_ENV=production node dist/src/server.js",
@@ -60,6 +60,6 @@
     "tsx": "^4.19.2"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": "18.x"
   }
 }
