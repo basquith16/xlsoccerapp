@@ -32,8 +32,7 @@
   },
   "include": [
     "src/**/*",
-    "models/**/*",
-    "utils/**/*"
+    "models/**/*"
   ],
   "exclude": [
     "node_modules",
