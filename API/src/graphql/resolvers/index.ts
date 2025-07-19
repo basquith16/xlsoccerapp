@@ -5,7 +5,7 @@ import Session from '../../../models/sessionModel';
 import Player from '../../../models/playerModel';
 import Booking from '../../../models/bookingModel';
 import Review from '../../../models/reviewModel';
-import { validateEmail, validatePassword, sanitizeInput, validateObjectId, validateRequiredFields } from '../../utils/validation';
+import { validateEmail, validatePassword, sanitizeInput, validateObjectId, validateRequiredFields } from '../../utils/validation.js';
 import crypto from 'crypto';
 import StripeService from '../../services/stripeService';
 
