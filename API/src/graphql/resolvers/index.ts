@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import User from '../../models/userModel';
-import Session from '../../models/sessionModel';
-import Player from '../../models/playerModel';
-import Booking from '../../models/bookingModel';
-import Review from '../../models/reviewModel';
+import User from '../../../models/userModel';
+import Session from '../../../models/sessionModel';
+import Player from '../../../models/playerModel';
+import Booking from '../../../models/bookingModel';
+import Review from '../../../models/reviewModel';
 import { validateEmail, validatePassword, sanitizeInput, validateObjectId, validateRequiredFields } from '../../utils/validation';
 import crypto from 'crypto';
 import StripeService from '../../services/stripeService';
