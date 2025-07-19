@@ -1,70 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { sessionService } from '../services/sessionService';
+import React, { useState } from 'react';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@apollo/client';
+import { Star, Calendar, Clock, Users, MapPin, DollarSign, User } from 'lucide-react';
+import Button from '../components/ui/Button';
+import PaymentForm from '../components/PaymentForm';
 import { useAuth } from '../hooks/useAuth';
+import { GET_SESSION_BY_SLUG } from '../graphql/queries';
+import { CREATE_BOOKING } from '../graphql/mutations';
+import { useMyBookings } from '../services/graphqlService';
 import { Session } from '../types';
 
 const SessionDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState('');
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
 
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (slug) {
-      fetchSession(slug);
-    }
-  }, [slug]);
-
-  const fetchSession = async (sessionSlug: string) => {
-    try {
-      setLoading(true);
-      const response = await sessionService.getSession(sessionSlug);
-      console.log('Session response:', response);
-      
-      if (response.status === 'success' && response.data && (response.data as any).session) {
-        setSession((response.data as any).session);
-      } else {
-        console.error('Invalid session response:', response);
-        setError('Session not found');
+  // Use GraphQL hooks
+  const { data: sessionData, loading, error, refetch } = useQuery(GET_SESSION_BY_SLUG, {
+    variables: { slug: slug || '' },
+  });
+  const [createBookingMutation] = useMutation(CREATE_BOOKING, {
+    update: (cache, { data }) => {
+      if (data?.createBooking) {
+        // Refetch the bookings query to update the cache
+        cache.evict({ fieldName: 'bookings' });
+        cache.gc();
       }
-    } catch (err) {
-      console.error('Error fetching session:', err);
-      setError('An error occurred while loading the session');
-    } finally {
-      setLoading(false);
     }
+  });
+
+  // Extract session from GraphQL response
+  const session = sessionData?.sessionBySlug;
+
+  const handleBooking = () => {
+    if (!session) return;
+    setShowPaymentForm(true);
   };
 
-  const handleBooking = async () => {
-    if (!session) return;
+  const handlePaymentSuccess = () => {
+    setBookingSuccess(true);
+    setShowPaymentForm(false);
+    setTimeout(() => {
+      navigate('/account');
+    }, 2000);
+  };
 
-    setBookingLoading(true);
+  const handlePaymentError = (error: string) => {
+    setBookingError(error);
+    setShowPaymentForm(false);
+  };
+
+  const handlePaymentCancel = () => {
+    setShowPaymentForm(false);
     setBookingError('');
-
-    try {
-      const response = await sessionService.bookSession(session._id);
-      if (response.status === 'success') {
-        // Redirect to payment or show success message
-        window.location.href = '/account'; // For now, redirect to account
-      } else {
-        setBookingError(response.message || 'Booking failed');
-      }
-    } catch (err) {
-      setBookingError('An error occurred while booking');
-    } finally {
-      setBookingLoading(false);
-    }
   };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#6B1B1C]"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600" role="status" aria-label="Loading session details">
+          <span className="sr-only">Loading session details...</span>
+        </div>
       </div>
     );
   }
@@ -73,12 +74,10 @@ const SessionDetailPage = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Session Not Found</h2>
-          <p className="text-gray-600 mb-4">{error || 'The session you are looking for does not exist.'}</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-4">Session Not Found</h2>
+          <p className="text-slate-700 mb-4">{String(error) || 'The session you are looking for does not exist.'}</p>
           <Link to="/sessions">
-            <button className="bg-[#6B1B1C] text-white px-6 py-2 rounded-full hover:bg-[#5a1516] transition-colors">
-              Back to Sessions
-            </button>
+            <Button>Back to Sessions</Button>
           </Link>
         </div>
       </div>
@@ -86,134 +85,257 @@ const SessionDetailPage = () => {
   }
 
   return (
-    <>
-      {/* Section Header with Hero Image */}
-      <section className="section-header">
-        <div className="header__hero">
-          <div className="header__hero-overlay">&nbsp;</div>
-          {session.image && session.image[0] ? (
-            <img
-              className="header__hero-img"
-              src={session.image[0].startsWith('/img/') ? session.image[0] : `/img/sessions/${session.image[0]}`}
-              alt={session.name}
-            />
-          ) : (
-            <img
-              className="header__hero-img"
-              src="/img/soccer-ball.png"
-              alt="No image available"
-            />
-          )}
-        </div>
-
-        <div className="heading-box">
-          <h1 className="heading-primary">
-            <span>{session.name}</span>
-          </h1>
-          <div className="heading-box__group">
-            <div className="heading-box__detail">
-              <svg className="heading-box__icon">
-                <use href="/img/icons.svg#icon-clock"></use>
-              </svg>
-              <span className="heading-box__text">{session.duration}</span>
-            </div>
-            <div className="heading-box__detail">
-              <svg className="heading-box__icon price">
-                <use href="/img/icons.svg#icon-dollar-sign"></use>
-              </svg>
-              <span className="heading-box__text">{session.price}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Section Description */}
-      <section className="section-description">
-        <div className="overview-box">
-          <div>
-            <div className="overview-box__group">
-              <h2 className="heading-secondary ma-bt-lg">Quick facts</h2>
-              <div className="overview-box__detail">
-                <svg className="overview-box__icon">
-                  <use href="/img/icons.svg#icon-calendar"></use>
-                </svg>
-                <span className="overview-box__label">Next date</span>
-                <span className="overview-box__text">
-                  {session.startDates && session.startDates[0] 
-                    ? new Date(session.startDates[0]).toLocaleDateString('en-US')
-                    : 'TBD'
-                  }
-                </span>
-              </div>
-              <div className="overview-box__detail">
-                <svg className="overview-box__icon">
-                  <use href="/img/icons.svg#icon-trending-up"></use>
-                </svg>
-                <span className="overview-box__label">Level</span>
-                <span className="overview-box__text">
-                  {session.birthYear !== undefined ? session.birthYear : 'Please Check With Front Desk'}
-                </span>
-              </div>
-              <div className="overview-box__detail">
-                <svg className="overview-box__icon">
-                  <use href="/img/icons.svg#icon-user"></use>
-                </svg>
-                <span className="overview-box__label">Spots Left</span>
-                <span className="overview-box__text">{session.rosterLimit}</span>
-              </div>
-            </div>
-
-            <div className="overview-box__group">
-              <h2 className="heading-secondary ma-bt-lg">Your Coaches</h2>
-              {session.trainers && session.trainers.map((trainer, index) => (
-                <div key={index} className="overview-box__detail">
-                  <img
-                    className="overview-box__img"
-                    src={`/img/users/${trainer.photo || 'default'}.jpg`}
-                    alt="Coach"
-                  />
-                  <span className="overview-box__text">{trainer.name}</span>
+    <div className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          <nav className="flex" aria-label="Breadcrumb">
+            <ol className="flex items-center space-x-4">
+              <li>
+                <Link to="/sessions" className="text-slate-500 hover:text-slate-700 focus:outline-none focus:text-slate-700">
+                  Sessions
+                </Link>
+              </li>
+              <li>
+                <div className="flex items-center">
+                  <span className="text-slate-400 mx-2" aria-hidden="true">/</span>
+                  <span className="text-slate-900">{session.name}</span>
                 </div>
-              ))}
-              <div className="overview-box__detail">
-                <button 
-                  className="btn btn--red span-all-rows"
+              </li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2">
+            {/* Session Images */}
+            <div className="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+              {session.images && session.images[0] ? (
+                <img
+                  src={session.images[0].startsWith('/img/') ? session.images[0] : `/img/sessions/${session.images[0]}`}
+                  alt={session.name}
+                  className="w-full h-96 object-cover"
+                />
+              ) : session.coverImage ? (
+                <img
+                  src={session.coverImage.startsWith('/img/') ? session.coverImage : `/img/sessions/${session.coverImage}`}
+                  alt={session.name}
+                  className="w-full h-96 object-cover"
+                />
+              ) : (
+                <img
+                  src="/img/soccer-ball.png"
+                  alt="No image available"
+                  className="w-full h-96 object-cover opacity-40"
+                />
+              )}
+            </div>
+
+            {/* Session Details */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    {session.sport}
+                  </span>
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-800">
+                    {session.demo}
+                  </span>
+                </div>
+                <div className="flex items-center text-yellow-500">
+                  <Star className="h-5 w-5 fill-current" aria-hidden="true" />
+                  <span className="ml-1 text-sm text-slate-700">4.8 (24 reviews)</span>
+                </div>
+              </div>
+
+              <h1 className="text-3xl font-bold text-slate-900 mb-4">{session.name}</h1>
+
+              {session.description && (
+                <div className="prose max-w-none mb-6">
+                  <p className="text-slate-600 leading-relaxed">{session.description}</p>
+                </div>
+              )}
+
+              {/* Session Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <Calendar className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
+                    <div>
+                      <p className="text-detail font-semibold text-slate-900">Birth Year</p>
+                      <p className="text-detail text-slate-700">{session.birthYear}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
+                    <div>
+                      <p className="text-detail font-semibold text-slate-900">Time</p>
+                      <p className="text-detail text-slate-700">
+                        {session.timeStart} - {session.timeEnd}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
+                    <div>
+                      <p className="text-detail font-semibold text-slate-900">Roster Limit</p>
+                      <p className="text-detail text-slate-700">{session.rosterLimit} players</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
+                    <div>
+                      <p className="text-detail font-semibold text-slate-900">Location</p>
+                      <p className="text-detail text-slate-700">XL Soccer World Nona</p>
+                    </div>
+                  </div>
+
+                  {session.duration && (
+                    <div className="flex items-center">
+                      <Clock className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
+                      <div>
+                        <p className="text-detail font-semibold text-slate-900">Duration</p>
+                        <p className="text-detail text-slate-700">{session.duration}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {session.trainer && (
+                    <div className="flex items-center">
+                      <User className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
+                      <div>
+                        <p className="text-detail font-semibold text-slate-900">Coach</p>
+                        <p className="text-detail text-slate-700">{session.trainer}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Start Dates */}
+            {session.startDates && session.startDates.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Start Dates</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {session.startDates.map((date: any, index: number) => (
+                    <div key={index} className="flex items-center p-3 bg-slate-50 rounded-md">
+                      <Calendar className="h-4 w-4 text-slate-400 mr-2" aria-hidden="true" />
+                      <span className="text-sm text-slate-700">
+                        {new Date(date).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center mb-2">
+                  <span className="text-3xl font-bold text-slate-900">${session.price}</span>
+                </div>
+                {session.priceDiscount && (
+                  <p className="text-sm text-slate-600 line-through">${session.priceDiscount}</p>
+                )}
+              </div>
+
+              {bookingError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md" role="alert">
+                  <p className="mb-2">{bookingError}</p>
+                  {bookingError.includes('already booked') && (
+                    <Link to="/account">
+                      <Button size="sm" className="mt-2 bg-red-600 text-white hover:bg-red-700">
+                        View My Bookings
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              )}
+
+              {bookingSuccess && (
+                <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 rounded-md" role="alert">
+                  Booking successful! You will be redirected to your account page.
+                </div>
+              )}
+
+              {isAuthenticated ? (
+                <Button
                   onClick={handleBooking}
                   disabled={bookingLoading}
+                  className="w-full bg-blue-600 text-white hover:bg-blue-700"
                 >
-                  {bookingLoading ? 'Processing...' : 'Register'}
-                </button>
+                  {bookingLoading ? 'Processing...' : 'Book Session'}
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-600 text-center">
+                    Please log in to book this session
+                  </p>
+                  <Link to="/login">
+                    <Button className="w-full bg-blue-600 text-white hover:bg-blue-700">Log In</Button>
+                  </Link>
+                </div>
+              )}
+
+              <div className="mt-6 pt-6 border-t border-slate-200">
+                <h4 className="text-sm font-medium text-slate-900 mb-3">What's included:</h4>
+                <ul className="space-y-2">
+                  <li className="flex items-center text-detail text-slate-700">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3" aria-hidden="true"></span>
+                    Professional coaching
+                  </li>
+                  <li className="flex items-center text-detail text-slate-700">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3" aria-hidden="true"></span>
+                    Equipment provided
+                  </li>
+                  <li className="flex items-center text-detail text-slate-700">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3" aria-hidden="true"></span>
+                    Progress tracking
+                  </li>
+                  <li className="flex items-center text-detail text-slate-700">
+                    <span className="w-2 h-2 bg-blue-500 rounded-full mr-3" aria-hidden="true"></span>
+                    End-of-session report
+                  </li>
+                </ul>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="description-box">
-          <h2 className="heading-secondary ma-bt-lg">About this session</h2>
-          <p className="description__text">
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-          </p>
-          <p className="description__text">
-            Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum!
-          </p>
+      {/* Payment Form Overlay */}
+      {showPaymentForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <PaymentForm
+              sessionId={session.id}
+              sessionName={session.name}
+              price={session.price}
+              onSuccess={handlePaymentSuccess}
+              onError={handlePaymentError}
+              onCancel={handlePaymentCancel}
+            />
+          </div>
         </div>
-      </section>
-
-      {/* Section Pictures */}
-      {session.profileImages && session.profileImages[0] && (
-        <section className="section-pictures">
-          {session.profileImages[0].split(',').map((img, index) => (
-            <div key={index} className="picture-box">
-              <img
-                className={`picture-box__img picture-box__img--${index + 1}`}
-                src={`/img/sessions/${img.trim()}`}
-                alt=""
-              />
-            </div>
-          ))}
-        </section>
       )}
-    </>
+    </div>
   );
 };
 

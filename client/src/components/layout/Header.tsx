@@ -1,100 +1,113 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, User, LogOut } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { User, LogOut, Menu, X } from 'lucide-react';
+import Button from '../ui/Button';
 
-const Header = (): JSX.Element => {
-  const { user, isAuthenticated, logout } = useAuth();
+const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
 
-  const handleLogout = async (): Promise<void> => {
-    await logout();
+  const handleLogout = () => {
+    logout();
+    navigate('/');
     setIsMenuOpen(false);
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <header className="bg-xl-red text-white sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20">
+    <header className="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-[110px]">
           {/* Logo */}
-          <Link to="/" className="flex items-center">
+          <Link to="/" className="flex items-center" aria-label="XL Soccer World Home">
             <img 
               src="/img/logo.webp" 
               alt="XL Soccer World" 
-              className="w-[8.7rem] h-auto"
+              className="h-[100px] w-auto"
             />
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link to="/" className="hover:text-gray-300 transition-colors">
+          <nav className="hidden md:flex items-center space-x-8" aria-label="Main navigation">
+            <Link 
+              to="/" 
+              className="text-white hover:text-blue-200 transition-colors text-sm focus:outline-none focus:text-blue-200"
+            >
               Home
             </Link>
-            <Link to="/sessions" className="hover:text-gray-300 transition-colors">
+            <Link 
+              to="/sessions" 
+              className="text-white hover:text-blue-200 transition-colors text-sm focus:outline-none focus:text-blue-200"
+            >
               Sessions
             </Link>
-            {isAuthenticated && (
-              <Link to="/account" className="hover:text-gray-300 transition-colors">
-                My Account
-              </Link>
+            {isAuthenticated ? (
+              <>
+                <Link 
+                  to="/account" 
+                  className="text-white hover:text-blue-200 transition-colors text-sm focus:outline-none focus:text-blue-200"
+                >
+                  My Account
+                </Link>
+                <div className="flex items-center space-x-4">
+                  <span className="text-white font-medium">
+                    Welcome, {user?.name || 'User'}
+                  </span>
+                  <Button 
+                    onClick={handleLogout}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center space-x-1 border-white text-white hover:bg-white hover:text-slate-900 text-xs"
+                  >
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
+                    <span>Logout</span>
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center space-x-4">
+                <Link to="/login">
+                  <Button variant="outline" size="sm" className="border-white text-white hover:bg-white hover:text-slate-900 text-xs">Login</Button>
+                </Link>
+                <Link to="/register">
+                  <Button size="sm" className="bg-blue-600 text-white hover:bg-blue-700 text-xs">Sign Up</Button>
+                </Link>
+              </div>
             )}
           </nav>
 
-          {/* User Menu */}
-          <div className="hidden md:flex items-center space-x-4">
-            {isAuthenticated ? (
-              <div className="flex items-center space-x-4">
-                <span className="text-sm">Welcome, {user?.name}</span>
-                <button
-                  onClick={handleLogout}
-                  className="flex items-center space-x-1 hover:text-gray-300 transition-colors"
-                >
-                  <LogOut size={16} />
-                  <span>Logout</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-4">
-                <Link 
-                  to="/login" 
-                  className="flex items-center space-x-1 hover:text-gray-300 transition-colors"
-                >
-                  <User size={16} />
-                  <span>Login</span>
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="bg-white text-xl-red px-4 py-2 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  Register
-                </Link>
-              </div>
-            )}
+          {/* Mobile menu button */}
+          <div className="md:hidden">
+            <button
+              onClick={toggleMenu}
+              className="text-white hover:text-blue-200 transition-colors focus:outline-none focus:text-blue-200"
+              aria-expanded={isMenuOpen}
+              aria-label={isMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
           </div>
-
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-white/20">
+          <div className="md:hidden py-4 border-t border-slate-700" role="navigation" aria-label="Mobile navigation">
             <nav className="flex flex-col space-y-4">
               <Link 
                 to="/" 
-                className="hover:text-gray-300 transition-colors"
+                className="text-white hover:text-blue-200 transition-colors text-sm focus:outline-none focus:text-blue-200"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Home
               </Link>
               <Link 
                 to="/sessions" 
-                className="hover:text-gray-300 transition-colors"
+                className="text-white hover:text-blue-200 transition-colors text-sm focus:outline-none focus:text-blue-200"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Sessions
@@ -103,37 +116,42 @@ const Header = (): JSX.Element => {
                 <>
                   <Link 
                     to="/account" 
-                    className="hover:text-gray-300 transition-colors"
+                    className="text-white hover:text-blue-200 transition-colors text-sm focus:outline-none focus:text-blue-200"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     My Account
                   </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center space-x-1 hover:text-gray-300 transition-colors text-left"
-                  >
-                    <LogOut size={16} />
-                    <span>Logout</span>
-                  </button>
+                  <div className="pt-4 border-t border-slate-700">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-white font-medium">
+                        Welcome, {user?.name || 'User'}
+                      </span>
+                      <User className="h-4 w-4 text-slate-400" aria-hidden="true" />
+                    </div>
+                    <Button 
+                      onClick={handleLogout}
+                      variant="outline"
+                      size="sm"
+                      className="w-full flex items-center justify-center space-x-2 border-white text-white hover:bg-white hover:text-slate-900 text-xs"
+                    >
+                      <LogOut className="h-4 w-4" aria-hidden="true" />
+                      <span>Logout</span>
+                    </Button>
+                  </div>
                 </>
               ) : (
-                <>
-                  <Link 
-                    to="/login" 
-                    className="flex items-center space-x-1 hover:text-gray-300 transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <User size={16} />
-                    <span>Login</span>
+                <div className="flex flex-col space-y-2 pt-4 border-t border-slate-700">
+                  <Link to="/login" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full border-white text-white hover:bg-white hover:text-slate-900 text-xs">
+                      Login
+                    </Button>
                   </Link>
-                  <Link 
-                    to="/register" 
-                    className="bg-white text-xl-red px-4 py-2 rounded-full hover:bg-gray-100 transition-colors text-center"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    Register
+                  <Link to="/register" onClick={() => setIsMenuOpen(false)}>
+                    <Button size="sm" className="w-full bg-blue-600 text-white hover:bg-blue-700 text-xs">
+                      Sign Up
+                    </Button>
                   </Link>
-                </>
+                </div>
               )}
             </nav>
           </div>

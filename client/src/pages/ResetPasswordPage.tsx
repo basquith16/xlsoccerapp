@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { authService } from '../services/authService';
+import { useResetPassword } from '../services/graphqlService';
+import { handleMutationResponse, handleGraphQLError } from '../services/graphqlService';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
 const ResetPasswordPage: React.FC = () => {
@@ -17,6 +18,7 @@ const ResetPasswordPage: React.FC = () => {
 
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const [resetPasswordMutation] = useResetPassword();
 
   const validateForm = () => {
     const errors: Record<string, string> = {};
@@ -53,9 +55,17 @@ const ResetPasswordPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const response = await authService.resetPassword(token, formData.password);
+      const { data } = await resetPasswordMutation({
+        variables: {
+          token: token!,
+          password: formData.password,
+          passwordConfirm: formData.passwordConfirm,
+        },
+      });
       
-      if (response.status === 'success') {
+      const response = handleMutationResponse(data.resetPassword);
+      
+      if (response.success) {
         setSuccess(true);
         setTimeout(() => {
           navigate('/login');
@@ -64,7 +74,7 @@ const ResetPasswordPage: React.FC = () => {
         setError(response.message || 'Failed to reset password');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'An error occurred while resetting your password');
+      setError(handleGraphQLError(err));
     } finally {
       setLoading(false);
     }
@@ -87,7 +97,7 @@ const ResetPasswordPage: React.FC = () => {
           <div>
             <img 
               className="mx-auto h-12 w-auto" 
-              src="/img/logo-green.png" 
+              src="/img/logo.webp" 
               alt="XL Soccer World" 
             />
             <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -108,7 +118,7 @@ const ResetPasswordPage: React.FC = () => {
         <div>
           <img 
             className="mx-auto h-12 w-auto" 
-            src="/img/logo-green.png" 
+            src="/img/logo.webp" 
             alt="XL Soccer World" 
           />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">

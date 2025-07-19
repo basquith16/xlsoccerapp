@@ -1,5 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { ApolloProvider } from '@apollo/client'
+import { client } from './lib/apollo'
 import App from './App'
 import './index.css'
 
@@ -8,6 +10,8 @@ if (!rootElement) throw new Error('Failed to find the root element');
 
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
-    <App />
+    <ApolloProvider client={client}>
+      <App />
+    </ApolloProvider>
   </React.StrictMode>,
 )

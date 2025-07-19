@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import Button from '../components/ui/Button';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -71,22 +72,22 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
           <img 
             className="mx-auto h-12 w-auto" 
-            src="/img/logo-green.png" 
+            src="/img/logo.webp" 
             alt="XL Soccer World" 
           />
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900">
             Sign in to your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-slate-700">
             Or{' '}
             <Link 
               to="/register" 
-              className="font-medium text-xl-green hover:text-green-500"
+              className="font-medium text-blue-700 hover:text-blue-800 focus:outline-none focus:text-blue-800"
             >
               create a new account
             </Link>
@@ -102,7 +103,7 @@ const LoginPage = () => {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="email" className="block text-sm font-medium text-slate-700">
                 Email address
               </label>
               <input
@@ -114,8 +115,8 @@ const LoginPage = () => {
                 value={formData.email}
                 onChange={handleChange}
                 className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
-                  validationErrors.email ? 'border-red-300' : 'border-gray-300'
-                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-xl-green focus:border-xl-green focus:z-10 sm:text-sm`}
+                  validationErrors.email ? 'border-red-300' : 'border-slate-300'
+                } placeholder-slate-500 text-slate-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
                 placeholder="Enter your email"
               />
               {validationErrors.email && (
@@ -124,7 +125,7 @@ const LoginPage = () => {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
                 Password
               </label>
               <div className="mt-1 relative">
@@ -137,8 +138,8 @@ const LoginPage = () => {
                   value={formData.password}
                   onChange={handleChange}
                   className={`appearance-none relative block w-full px-3 py-2 pr-10 border ${
-                    validationErrors.password ? 'border-red-300' : 'border-gray-300'
-                  } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-xl-green focus:border-xl-green focus:z-10 sm:text-sm`}
+                    validationErrors.password ? 'border-red-300' : 'border-slate-300'
+                  } placeholder-slate-500 text-slate-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
                   placeholder="Enter your password"
                 />
                 <button
@@ -147,9 +148,9 @@ const LoginPage = () => {
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
+                    <EyeOff className="h-5 w-5 text-slate-400" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
+                    <Eye className="h-5 w-5 text-slate-400" />
                   )}
                 </button>
               </div>
@@ -163,7 +164,7 @@ const LoginPage = () => {
             <div className="text-sm">
               <Link 
                 to="/forgot-password" 
-                className="font-medium text-xl-green hover:text-green-500"
+                className="font-medium text-blue-700 hover:text-blue-800 focus:outline-none focus:text-blue-800"
               >
                 Forgot your password?
               </Link>
@@ -174,7 +175,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-xl-green hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-xl-green disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

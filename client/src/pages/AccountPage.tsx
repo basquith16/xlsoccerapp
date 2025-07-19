@@ -1,38 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, DollarSign, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, MapPin, DollarSign, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { sessionService } from '../services/sessionService';
+import { useMyBookings } from '../services/graphqlService';
 import { Session } from '../types';
 import Button from '../components/ui/Button';
 
 const AccountPage = () => {
   const { user, logout } = useAuth();
-  const [mySessions, setMySessions] = useState<Session[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { data: bookingsData, loading, error, refetch } = useMyBookings();
+  const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
 
-  useEffect(() => {
-    fetchMySessions();
-  }, []);
-
-  const fetchMySessions = async () => {
-    try {
-      setLoading(true);
-      const response = await sessionService.getMySessions();
-      if (response.status === 'success' && response.data) {
-        setMySessions(response.data);
-      } else {
-        setError('Failed to load your sessions');
-      }
-    } catch (err) {
-      setError('An error occurred while loading your sessions');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Extract bookings from GraphQL response
+  const myBookings = bookingsData?.bookings || [];
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const toggleBookingExpansion = (bookingId: string) => {
+    setExpandedBookings(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(bookingId)) {
+        newSet.delete(bookingId);
+      } else {
+        newSet.add(bookingId);
+      }
+      return newSet;
+    });
   };
 
   if (!user) {
@@ -138,10 +132,10 @@ const AccountPage = () => {
                 </div>
               ) : error ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">{error}</p>
-                  <Button onClick={fetchMySessions}>Try Again</Button>
+                  <p className="text-gray-600 mb-4">An error occurred while loading your sessions</p>
+                  <Button onClick={() => window.location.reload()}>Try Again</Button>
                 </div>
-              ) : mySessions.length === 0 ? (
+              ) : myBookings.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-gray-600 mb-4">You haven't booked any sessions yet.</p>
                   <Button onClick={() => window.location.href = '/sessions'}>
@@ -150,65 +144,97 @@ const AccountPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {mySessions.map((session) => (
-                    <div key={session._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                              {session.sport}
-                            </span>
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              {session.demo}
-                            </span>
-                          </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-sm text-gray-600">
+                      {myBookings.length} session{myBookings.length !== 1 ? 's' : ''} booked
+                    </span>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={() => refetch()}
+                      disabled={loading}
+                    >
+                      {loading ? 'Refreshing...' : 'Refresh'}
+                    </Button>
+                  </div>
+                  {myBookings.map((booking: any) => {
+                    if (!booking) return null;
+                    const isExpanded = expandedBookings.has(booking.id);
+                    
+                    return (
+                      <div key={booking.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-2">
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {booking.session.sport}
+                              </span>
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {booking.session.demo}
+                              </span>
+                            </div>
                           
-                          <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                            {session.name}
-                          </h4>
+                            <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                              {booking.session.name}
+                            </h4>
 
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-2" />
-                              <span>Birth Year: {session.birthYear}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <Users className="h-4 w-4 mr-2" />
-                              <span>Limit: {session.rosterLimit}</span>
-                            </div>
-                            <div className="flex items-center">
+                            <div className="flex items-center text-sm text-gray-600">
                               <DollarSign className="h-4 w-4 mr-2" />
-                              <span>${session.price}</span>
+                              <span>${booking.session.price}</span>
                             </div>
+
+                            {/* Expanded Content */}
+                            {isExpanded && (
+                              <div className="mt-4 pt-4 border-t border-gray-200">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                                  <div className="flex items-center">
+                                    <Users className="h-4 w-4 mr-2" />
+                                    <span>Coach: {booking.session.trainer && booking.session.trainer.trim() !== '' ? booking.session.trainer : 'TBD'}</span>
+                                  </div>
+                                  {booking.session.startDates && booking.session.startDates.length > 0 && (
+                                    <div className="flex items-start">
+                                      <Calendar className="h-4 w-4 mr-2 mt-0.5" />
+                                      <div>
+                                        <span className="font-medium">Start Dates:</span>
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                          {booking.session.startDates.map((date: string, index: number) => (
+                                            <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
+                                              {new Date(date).toLocaleDateString()}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
 
-                          {session.startDates && session.startDates.length > 0 && (
-                            <div className="mt-3">
-                              <p className="text-sm font-medium text-gray-700 mb-1">Start Dates:</p>
-                              <div className="flex flex-wrap gap-2">
-                                {session.startDates.slice(0, 3).map((date, index) => (
-                                  <span key={index} className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                    {new Date(date).toLocaleDateString()}
-                                  </span>
-                                ))}
-                                {session.startDates.length > 3 && (
-                                  <span className="text-xs text-gray-500">
-                                    +{session.startDates.length - 3} more
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="ml-4">
-                          <Button size="sm" variant="outline">
-                            View Details
-                          </Button>
+                          <div className="ml-4">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => toggleBookingExpansion(booking.id)}
+                              className="flex items-center space-x-1"
+                            >
+                              {isExpanded ? (
+                                <>
+                                  <ChevronUp className="h-4 w-4" />
+                                  <span>Hide Details</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ChevronDown className="h-4 w-4" />
+                                  <span>View Details</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

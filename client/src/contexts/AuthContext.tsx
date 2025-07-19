@@ -1,6 +1,7 @@
 import React, { useState, useEffect, ReactNode } from 'react';
 import { AuthContext } from './AuthContext';
-import { authService } from '../services/authService';
+import { useMe, useLogin, useSignup, useForgotPassword } from '../services/graphqlService';
+import { handleMutationResponse, handleGraphQLError } from '../services/graphqlService';
 import { User, RegisterFormData, UpdateProfileFormData } from '../types';
 
 interface AuthProviderProps {
@@ -11,26 +12,70 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // GraphQL hooks
+  const { data: meData, loading: meLoading, error: meError, refetch: refetchMe } = useMe();
+  const [loginMutation] = useLogin();
+  const [signupMutation] = useSignup();
+  const [forgotPasswordMutation] = useForgotPassword();
+
+  // Handle me query results
   useEffect(() => {
-    // Check if user is already logged in on app start
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
+    const token = localStorage.getItem('token');
+    
+    if (!token) {
+      setUser(null);
+      setLoading(false);
+      return;
     }
-    setLoading(false);
-  }, []);
+
+    if (meLoading) {
+      // Still loading, keep current state
+      return;
+    }
+
+    if (meError) {
+      // Query failed, token might be invalid
+      console.log('Me query failed, clearing token:', meError);
+      localStorage.removeItem('token');
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    if (meData?.me) {
+      // Successfully got user data
+      console.log('Me query successful, setting user:', meData.me);
+      setUser(meData.me);
+      setLoading(false);
+    }
+  }, [meData, meLoading, meError]);
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await authService.login(email, password);
-      if (response.data?.user) {
-        setUser(response.data.user);
+      const { data } = await loginMutation({
+        variables: { input: { email, password } }
+      });
+      
+      console.log('Login response:', data);
+      const response = handleMutationResponse(data.login);
+      console.log('Handled response:', response);
+      
+      if (response.success && response.data) {
+        // Store token
+        console.log('Storing token:', data.login.token);
+        localStorage.setItem('token', data.login.token);
+        setUser(response.data);
+        
+        // Refetch user data to ensure consistency
+        await refetchMe();
       }
-      return { success: true, data: response };
+      
+      return response;
     } catch (error: any) {
+      console.error('Login error:', error);
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Login failed' 
+        error: handleGraphQLError(error)
       };
     }
   };
@@ -38,31 +83,41 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const register = async (userData: RegisterFormData) => {
     console.log('AuthContext: Starting registration with data:', userData);
     try {
-      const response = await authService.register(userData);
-      console.log('AuthContext: Registration response:', response);
-      if (response.data?.user) {
-        setUser(response.data.user);
+      const { data } = await signupMutation({
+        variables: { input: userData }
+      });
+      
+      const response = handleMutationResponse(data.signup);
+      
+      if (response.success && response.data) {
+        // Store token
+        localStorage.setItem('token', data.signup.token);
+        setUser(response.data);
+        
+        // Refetch user data to ensure consistency
+        await refetchMe();
       }
-      return { success: true, data: response };
+      
+      return response;
     } catch (error: any) {
       console.error('AuthContext: Registration error caught:', error);
-      console.error('AuthContext: Error response data:', error.response?.data);
-      console.error('AuthContext: Error message:', error.response?.data?.message);
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Registration failed' 
+        error: handleGraphQLError(error)
       };
     }
   };
 
   const logout = async () => {
     try {
-      await authService.logout();
+      // Clear token and user state
+      localStorage.removeItem('token');
       setUser(null);
       return { success: true };
     } catch (error) {
       console.error('Logout error:', error);
       // Still clear local state even if server logout fails
+      localStorage.removeItem('token');
       setUser(null);
       return { success: true };
     }
@@ -70,34 +125,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const updateProfile = async (userData: UpdateProfileFormData) => {
     try {
-      const response = await authService.updateProfile(userData);
-      if (response.data) {
-        setUser(response.data);
-      }
-      return { success: true, data: response };
+      // For now, we'll need to implement this mutation in the backend
+      // This is a placeholder for the profile update functionality
+      console.log('Profile update not yet implemented in GraphQL');
+      return { 
+        success: false, 
+        error: 'Profile update not yet implemented' 
+      };
     } catch (error: any) {
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Profile update failed' 
+        error: handleGraphQLError(error)
       };
     }
   };
 
   const forgotPassword = async (email: string) => {
     try {
-      const response = await authService.forgotPassword(email);
-      return { success: true, data: response };
+      const { data } = await forgotPasswordMutation({
+        variables: { email }
+      });
+      
+      return handleMutationResponse(data.forgotPassword);
     } catch (error: any) {
       return { 
         success: false, 
-        error: error.response?.data?.message || 'Failed to send reset email' 
+        error: handleGraphQLError(error)
       };
     }
   };
 
   const value = {
     user,
-    loading,
+    loading: loading || meLoading,
     login,
     register,
     logout,

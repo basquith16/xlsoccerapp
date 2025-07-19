@@ -34,8 +34,9 @@ const FormInput: React.FC<FormInputProps> = ({
 
   return (
     <div className={className}>
-      <label htmlFor={id} className="block text-sm font-medium text-gray-700">
+      <label htmlFor={id} className="block text-sm font-medium text-slate-700">
         {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </label>
       <div className="mt-1 relative">
         <input
@@ -46,29 +47,35 @@ const FormInput: React.FC<FormInputProps> = ({
           required={required}
           value={value}
           onChange={onChange}
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={error ? `${id}-error` : undefined}
           className={`appearance-none relative block w-full px-3 py-2 ${
             isPassword ? 'pr-10' : ''
           } border ${
-            error ? 'border-red-300' : 'border-gray-300'
-          } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-xl-green focus:border-xl-green focus:z-10 sm:text-sm`}
+            error ? 'border-red-500' : 'border-slate-300'
+          } placeholder-slate-500 text-slate-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
           placeholder={placeholder}
         />
         {isPassword && (
           <button
             type="button"
-            className="absolute inset-y-0 right-0 pr-3 flex items-center"
+            className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-slate-600 focus:outline-none focus:text-slate-600"
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
           >
             {showPassword ? (
-              <EyeOff className="h-5 w-5 text-gray-400" />
+              <EyeOff className="h-5 w-5 text-slate-400" />
             ) : (
-              <Eye className="h-5 w-5 text-gray-400" />
+              <Eye className="h-5 w-5 text-slate-400" />
             )}
           </button>
         )}
       </div>
       {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+        <p id={`${id}-error`} className="mt-1 text-sm text-red-600" role="alert">
+          {error}
+        </p>
       )}
     </div>
   );

@@ -25,9 +25,9 @@ const Button: React.FC<ButtonProps> = ({
   const baseClasses = 'inline-flex items-center justify-center font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
-    primary: 'bg-xl-green text-white hover:bg-green-600 focus:ring-xl-green',
-    secondary: 'bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500',
-    outline: 'border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-xl-green',
+    primary: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
+    secondary: 'bg-slate-600 text-white hover:bg-slate-700 focus:ring-slate-500',
+    outline: 'border border-slate-300 hover:bg-slate-50 focus:ring-blue-500',
   };
 
   const sizeClasses = {
@@ -44,9 +44,10 @@ const Button: React.FC<ButtonProps> = ({
       disabled={disabled || loading}
       onClick={onClick}
       className={classes}
+      aria-disabled={disabled || loading}
     >
       {loading && (
-        <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
+        <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" aria-hidden="true" />
       )}
       {children}
     </button>
