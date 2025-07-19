@@ -1,4 +1,5 @@
-API/node_modules/
-API/*.env
-API/.cache/
-API/.parcel-cache/
+api/node_modules/
+api/*.env
+api/.cache/
+api/.parcel-cache/
+.vercel
