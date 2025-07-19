@@ -5,12 +5,13 @@
   "main": "dist/src/server.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc --target ES2022 --module ESNext --moduleResolution node --outDir dist --esModuleInterop --allowSyntheticDefaultImports --skipLibCheck --allowJs src/**/*.ts",
     "start": "node dist/src/server.js",
     "dev": "tsx src/server.ts",
     "start:prod": "NODE_ENV=production node dist/src/server.js",
     "debug": "tsx --inspect src/server.ts",
-    "codegen": "graphql-codegen"
+    "codegen": "graphql-codegen",
+    "heroku-postbuild": "npm run build"
   },
   "author": "Brian M Asquith",
   "license": "MIT",
