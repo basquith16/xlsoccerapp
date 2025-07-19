@@ -5,7 +5,7 @@
   "main": "dist/src/server.js",
   "type": "module",
   "scripts": {
-    "build": "tsc src/server.ts src/graphql/server.ts src/graphql/schema.ts src/graphql/resolvers/index.ts src/middleware/rateLimiter.ts src/middleware/security.ts src/models/userModel.ts src/services/stripeService.ts src/types/context.ts src/types/graphql.ts src/types/models.ts src/utils/environment.ts src/utils/validation.ts --target ES2022 --module ESNext --moduleResolution node --outDir dist --esModuleInterop --allowSyntheticDefaultImports --skipLibCheck",
+    "build": "tsc",
     "start": "node dist/src/server.js",
     "dev": "tsx src/server.ts",
     "start:prod": "NODE_ENV=production node dist/src/server.js",
@@ -60,6 +60,6 @@
     "tsx": "^4.19.2"
   },
   "engines": {
-    "node": "18.x"
+    "node": "22.x"
   }
 }
