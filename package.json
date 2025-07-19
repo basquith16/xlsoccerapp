@@ -3,9 +3,12 @@
   "version": "2.0.0",
   "description": "XL Soccer App - Full Stack Application",
   "scripts": {
-    "build": "cd API && npm run build",
+    "build": "cd API && npm install && npm run build",
     "start": "cd API && npm start",
     "dev": "cd API && npm run dev"
+  },
+  "dependencies": {
+    "typescript": "^5.7.2"
   },
   "engines": {
     "node": "22.x"
