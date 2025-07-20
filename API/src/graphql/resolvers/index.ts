@@ -108,12 +108,11 @@ export const resolvers = {
         throw new Error('Not authenticated');
       }
       
-      const family = await Family.findOne({ 
-        $or: [
-          { primaryContact: user._id },
-          { members: user._id }
-        ]
-      }).populate('primaryContact').populate('members');
+      if (!user.familyId) {
+        return null;
+      }
+      
+      const family = await Family.findById(user.familyId).populate('primaryContact').populate('members');
       
       return family;
     },
@@ -122,12 +121,11 @@ export const resolvers = {
         throw new Error('Not authenticated');
       }
       
-      const family = await Family.findOne({ 
-        $or: [
-          { primaryContact: user._id },
-          { members: user._id }
-        ]
-      });
+      if (!user.familyId) {
+        return [];
+      }
+      
+      const family = await Family.findById(user.familyId);
       
       if (!family) {
         return [];
@@ -410,6 +408,19 @@ export const resolvers = {
         role: 'user' // Default role
       });
 
+      await user.save();
+
+      // Create family for the user
+      const family = new Family({
+        name: `${sanitizedName}'s Family`,
+        primaryContact: user._id,
+        members: [user._id]
+      });
+
+      await family.save();
+
+      // Update user with familyId
+      user.familyId = family._id;
       await user.save();
 
       // Generate JWT token
@@ -714,40 +725,6 @@ export const resolvers = {
         };
       }
     },
-    createFamily: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
-
-      const { name } = input;
-
-      // Check if user already has a family
-      const existingFamily = await Family.findOne({
-        $or: [
-          { primaryContact: user._id },
-          { members: user._id }
-        ]
-      });
-
-      if (existingFamily) {
-        throw new Error('User already belongs to a family');
-      }
-
-      // Create new family
-      const family = new Family({
-        name,
-        primaryContact: user._id,
-        members: [user._id]
-      });
-
-      await family.save();
-
-      // Update user with familyId
-      user.familyId = family._id;
-      await user.save();
-
-      return family;
-    },
     addFamilyMember: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
       if (!user) {
         throw new Error('Not authenticated');
@@ -755,16 +732,16 @@ export const resolvers = {
 
       const { name, birthDate, sex, email, password, passwordConfirm } = input;
 
-      // Find user's family
-      const family = await Family.findOne({
-        $or: [
-          { primaryContact: user._id },
-          { members: user._id }
-        ]
-      });
+      // Check if user has a familyId
+      if (!user.familyId) {
+        throw new Error('User does not belong to a family');
+      }
+
+      // Find user's family using familyId
+      const family = await Family.findById(user.familyId);
 
       if (!family) {
-        throw new Error('User does not belong to a family');
+        throw new Error('Family not found');
       }
 
       const birthDateObj = new Date(birthDate);
@@ -856,16 +833,16 @@ export const resolvers = {
         throw new Error('Invalid member ID format');
       }
 
-      // Find user's family
-      const family = await Family.findOne({
-        $or: [
-          { primaryContact: user._id },
-          { members: user._id }
-        ]
-      });
+      // Check if user has a familyId
+      if (!user.familyId) {
+        throw new Error('User does not belong to a family');
+      }
+
+      // Find user's family using familyId
+      const family = await Family.findById(user.familyId);
 
       if (!family) {
-        throw new Error('User does not belong to a family');
+        throw new Error('Family not found');
       }
 
       // Check if user is primary contact (only primary contact can remove members)

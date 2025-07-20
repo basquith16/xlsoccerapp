@@ -204,4 +204,44 @@ export const GET_REVIEWS = gql`
       totalCount
     }
   }
+`;
+
+// Family Queries
+export const GET_FAMILY = gql`
+  query GetFamily {
+    family {
+      id
+      name
+      primaryContact {
+        id
+        name
+        email
+      }
+      members {
+        id
+        name
+        type
+        isMinor
+        email
+        photo
+        birthDate
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const GET_FAMILY_MEMBERS = gql`
+  query GetFamilyMembers {
+    familyMembers {
+      id
+      name
+      type
+      isMinor
+      email
+      photo
+      birthDate
+    }
+  }
 `; 

@@ -23,13 +23,13 @@ const familySchema = new Schema({
   },
   members: [{
     type: Schema.Types.ObjectId,
-    refPath: 'memberModel'
+    refPath: 'memberModels'
   }],
-  memberModel: {
+  memberModels: [{
     type: String,
     required: true,
     enum: ['User', 'Player']
-  }
+  }]
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

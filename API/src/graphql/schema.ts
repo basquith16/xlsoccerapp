@@ -224,10 +224,6 @@ export const typeDefs = gql`
     passwordConfirm: String
   }
 
-  input CreateFamilyInput {
-    name: String!
-  }
-
   type Query {
     # Public queries
     sessions(limit: Int = 10, offset: Int = 0): SessionConnection!
@@ -283,7 +279,6 @@ export const typeDefs = gql`
     deleteReview(id: ID!): String!
     
     # Family operations
-    createFamily(input: CreateFamilyInput!): Family!
     addFamilyMember(input: AddFamilyMemberInput!): FamilyMember!
     removeFamilyMember(memberId: ID!): String!
   }

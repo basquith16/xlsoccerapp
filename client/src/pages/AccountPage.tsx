@@ -59,9 +59,6 @@ const AccountPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Family Section */}
-        <FamilySection />
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* User Profile */}
           <div className="lg:col-span-1">
@@ -125,8 +122,12 @@ const AccountPage = () => {
             </div>
           </div>
 
-          {/* My Sessions */}
-          <div className="lg:col-span-2">
+          {/* Right Column - Family and Sessions */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Family Section */}
+            <FamilySection />
+
+            {/* My Sessions */}
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-semibold text-gray-900 mb-6">My Sessions</h3>
 

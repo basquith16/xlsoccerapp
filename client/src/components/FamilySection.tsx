@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_FAMILY_MEMBERS, CREATE_FAMILY, ADD_FAMILY_MEMBER, REMOVE_FAMILY_MEMBER } from '../graphql/queries';
+import { GET_FAMILY_MEMBERS } from '../graphql/queries';
+import { ADD_FAMILY_MEMBER, REMOVE_FAMILY_MEMBER } from '../graphql/mutations';
 import { GET_ME } from '../graphql/queries';
 import AddFamilyMemberModal from './AddFamilyMemberModal';
 
@@ -16,22 +17,9 @@ interface FamilyMember {
 
 const FamilySection: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showCreateFamilyModal, setShowCreateFamilyModal] = useState(false);
-  const [familyName, setFamilyName] = useState('');
 
   const { data: userData } = useQuery(GET_ME);
   const { data: familyData, loading, refetch } = useQuery(GET_FAMILY_MEMBERS);
-
-  const [createFamily] = useMutation(CREATE_FAMILY, {
-    onCompleted: () => {
-      setShowCreateFamilyModal(false);
-      setFamilyName('');
-      refetch();
-    },
-    onError: (error) => {
-      alert(`Error creating family: ${error.message}`);
-    }
-  });
 
   const [addFamilyMember] = useMutation(ADD_FAMILY_MEMBER, {
     onCompleted: () => {
@@ -51,14 +39,6 @@ const FamilySection: React.FC = () => {
       alert(`Error removing family member: ${error.message}`);
     }
   });
-
-  const handleCreateFamily = () => {
-    if (!familyName.trim()) {
-      alert('Please enter a family name');
-      return;
-    }
-    createFamily({ variables: { input: { name: familyName.trim() } } });
-  };
 
   const handleRemoveMember = (memberId: string) => {
     if (window.confirm('Are you sure you want to remove this family member?')) {
@@ -89,36 +69,17 @@ const FamilySection: React.FC = () => {
     <div className="bg-white rounded-lg shadow-md p-6 mb-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-gray-800">Family</h2>
-        {!userData?.me?.familyId ? (
-          <button
-            onClick={() => setShowCreateFamilyModal(true)}
-            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-          >
-            Create Family
-          </button>
-        ) : (
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Add Family Member
-          </button>
-        )}
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Add Family Member
+        </button>
       </div>
 
       {loading ? (
         <div className="text-center py-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-        </div>
-      ) : !userData?.me?.familyId ? (
-        <div className="text-center py-8">
-          <div className="text-gray-500 mb-4">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-          </div>
-          <p className="text-gray-600 mb-4">You haven't created a family yet.</p>
-          <p className="text-sm text-gray-500">Create a family to add family members and manage them together.</p>
         </div>
       ) : familyMembers.length === 0 ? (
         <div className="text-center py-8">
@@ -198,44 +159,6 @@ const FamilySection: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Create Family Modal */}
-      {showCreateFamilyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Create Family</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Family Name
-              </label>
-              <input
-                type="text"
-                value={familyName}
-                onChange={(e) => setFamilyName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                placeholder="Enter family name"
-              />
-            </div>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  setShowCreateFamilyModal(false);
-                  setFamilyName('');
-                }}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCreateFamily}
-                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
-              >
-                Create Family
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
