@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, DollarSign, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, MapPin, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useMyBookings } from '../services/graphqlService';
 import { Session } from '../types';
@@ -45,15 +45,10 @@ const AccountPage = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">My Account</h1>
-              <p className="mt-2 text-gray-600">Welcome back, {user.name}!</p>
-            </div>
-            <Button variant="outline" onClick={handleLogout}>
-              Logout
-            </Button>
+        <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">My Account</h1>
+            <p className="mt-1 text-gray-600">Welcome back, {user.name}!</p>
           </div>
         </div>
       </div>
@@ -149,18 +144,10 @@ const AccountPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="flex justify-between items-center mb-4">
+                  <div className="mb-4">
                     <span className="text-sm text-gray-600">
                       {myBookings.length} session{myBookings.length !== 1 ? 's' : ''} booked
                     </span>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => refetch()}
-                      disabled={loading}
-                    >
-                      {loading ? 'Refreshing...' : 'Refresh'}
-                    </Button>
                   </div>
                   {myBookings.map((booking: any) => {
                     if (!booking) return null;
@@ -184,7 +171,6 @@ const AccountPage = () => {
                             </h4>
 
                             <div className="flex items-center text-sm text-gray-600">
-                              <DollarSign className="h-4 w-4 mr-2" />
                               <span>${booking.session.price}</span>
                             </div>
 

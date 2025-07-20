@@ -8,6 +8,7 @@ export const typeDefs = gql `
     photo: String
     waiverSigned: Boolean!
     joinedDate: String!
+    birthday: String
     active: Boolean
   }
 
@@ -20,6 +21,15 @@ export const typeDefs = gql `
     isMinor: Boolean!
     profImg: String
     parent: User
+  }
+
+  type FamilyMember {
+    id: ID!
+    name: String!
+    isMinor: Boolean!
+    birthDate: String!
+    sex: String!
+    profImg: String
   }
 
   type Session {
@@ -191,6 +201,13 @@ export const typeDefs = gql `
     rating: Int!
   }
 
+  input AddFamilyMemberInput {
+    name: String!
+    birthDate: String!
+    sex: String!
+    isMinor: Boolean!
+  }
+
   type Query {
     # Public queries
     sessions(limit: Int = 10, offset: Int = 0): SessionConnection!
@@ -207,6 +224,9 @@ export const typeDefs = gql `
     booking(id: ID!): Booking
     reviews: [Review!]!
     review(id: ID!): Review
+    
+    # Family queries
+    familyMembers: [FamilyMember!]!
   }
 
   type Mutation {
@@ -240,5 +260,9 @@ export const typeDefs = gql `
     createReview(input: CreateReviewInput!): Review!
     updateReview(id: ID!, review: String!, rating: Int!): Review!
     deleteReview(id: ID!): String!
+    
+    # Family operations
+    addFamilyMember(input: AddFamilyMemberInput!): FamilyMember!
+    removeFamilyMember(memberId: ID!): String!
   }
 `;

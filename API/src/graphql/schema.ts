@@ -10,8 +10,6 @@ export const typeDefs = gql`
     waiverSigned: Boolean!
     joinedDate: String!
     birthday: String
-    familyId: ID
-    familyMembers: [FamilyMember!]
     active: Boolean
   }
 
@@ -24,26 +22,15 @@ export const typeDefs = gql`
     isMinor: Boolean!
     profImg: String
     parent: User
-    familyId: ID
-  }
-
-  type Family {
-    id: ID!
-    name: String!
-    primaryContact: User!
-    members: [FamilyMember!]!
-    createdAt: String!
-    updatedAt: String!
   }
 
   type FamilyMember {
     id: ID!
     name: String!
-    type: String! # "User" or "Player"
     isMinor: Boolean!
-    email: String
-    photo: String
-    birthDate: String
+    birthDate: String!
+    sex: String!
+    profImg: String
   }
 
   type Session {
@@ -219,9 +206,7 @@ export const typeDefs = gql`
     name: String!
     birthDate: String!
     sex: String!
-    email: String
-    password: String
-    passwordConfirm: String
+    isMinor: Boolean!
   }
 
   type Query {
@@ -242,7 +227,6 @@ export const typeDefs = gql`
     review(id: ID!): Review
     
     # Family queries
-    family: Family
     familyMembers: [FamilyMember!]!
   }
 

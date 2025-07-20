@@ -5,7 +5,6 @@ import Session from '../../../models/sessionModel';
 import Player from '../../../models/playerModel';
 import Booking from '../../../models/bookingModel';
 import Review from '../../../models/reviewModel';
-import Family from '../../../models/familyModel';
 import { validateEmail, validatePassword, sanitizeInput, validateObjectId, validateRequiredFields } from '../../utils/validation';
 import crypto from 'crypto';
 import StripeService from '../../services/stripeService';
@@ -103,60 +102,22 @@ export const resolvers = {
         totalCount: await Review.countDocuments({})
       };
     },
-    family: async (_: unknown, __: unknown, { user }: { user: any }) => {
-      if (!user) {
-        throw new Error('Not authenticated');
-      }
-      
-      if (!user.familyId) {
-        return null;
-      }
-      
-      const family = await Family.findById(user.familyId).populate('primaryContact').populate('members');
-      
-      return family;
-    },
     familyMembers: async (_: unknown, __: unknown, { user }: { user: any }) => {
       if (!user) {
         throw new Error('Not authenticated');
       }
       
-      if (!user.familyId) {
-        return [];
-      }
+      // Get all players where the current user is the parent
+      const familyMembers = await Player.find({ parent: user._id });
       
-      const family = await Family.findById(user.familyId);
-      
-      if (!family) {
-        return [];
-      }
-      
-      // Get all family members (both Users and Players)
-      const users = await User.find({ familyId: family._id });
-      const players = await Player.find({ familyId: family._id });
-      
-      const familyMembers = [
-        ...users.map(user => ({
-          id: user._id,
-          name: user.name,
-          type: 'User',
-          isMinor: user.birthday ? new Date().getFullYear() - new Date(user.birthday).getFullYear() < 18 : false,
-          email: user.email,
-          photo: user.photo,
-          birthDate: user.birthday ? user.birthday.toISOString() : null
-        })),
-        ...players.map(player => ({
-          id: player._id,
-          name: player.name,
-          type: 'Player',
-          isMinor: player.isMinor,
-          email: null,
-          photo: player.profImg,
-          birthDate: player.birthDate.toISOString()
-        }))
-      ];
-      
-      return familyMembers;
+      return familyMembers.map(player => ({
+        id: player._id,
+        name: player.name,
+        isMinor: player.isMinor,
+        birthDate: player.birthDate.toISOString(),
+        sex: player.sex,
+        profImg: player.profImg
+      }));
     }
   },
   Session: {
@@ -408,19 +369,6 @@ export const resolvers = {
         role: 'user' // Default role
       });
 
-      await user.save();
-
-      // Create family for the user
-      const family = new Family({
-        name: `${sanitizedName}'s Family`,
-        primaryContact: user._id,
-        members: [user._id]
-      });
-
-      await family.save();
-
-      // Update user with familyId
-      user.familyId = family._id;
       await user.save();
 
       // Generate JWT token
@@ -730,99 +678,27 @@ export const resolvers = {
         throw new Error('Not authenticated');
       }
 
-      const { name, birthDate, sex, email, password, passwordConfirm } = input;
+      const { name, birthDate, sex, isMinor } = input;
 
-      // Check if user has a familyId
-      if (!user.familyId) {
-        throw new Error('User does not belong to a family');
-      }
+      // Create a Player for the family member
+      const player = new Player({
+        name,
+        birthDate: new Date(birthDate),
+        sex,
+        parent: user._id,
+        isMinor
+      });
 
-      // Find user's family using familyId
-      const family = await Family.findById(user.familyId);
+      await player.save();
 
-      if (!family) {
-        throw new Error('Family not found');
-      }
-
-      const birthDateObj = new Date(birthDate);
-      const age = new Date().getFullYear() - birthDateObj.getFullYear();
-      const isMinor = age < 18;
-
-      if (isMinor) {
-        // Create a Player for minors
-        const player = new Player({
-          name,
-          birthDate: birthDateObj,
-          sex,
-          parent: user._id,
-          familyId: family._id,
-          isMinor: true
-        });
-
-        await player.save();
-
-        // Add player to family
-        family.members.push(player._id);
-        await family.save();
-
-        return {
-          id: player._id,
-          name: player.name,
-          type: 'Player',
-          isMinor: true,
-          email: null,
-          photo: player.profImg,
-          birthDate: player.birthDate.toISOString()
-        };
-      } else {
-        // Create a User for adults
-        if (!email || !password || !passwordConfirm) {
-          throw new Error('Email, password, and password confirmation are required for adult family members');
-        }
-
-        if (password !== passwordConfirm) {
-          throw new Error('Passwords do not match');
-        }
-
-        if (!validateEmail(email)) {
-          throw new Error('Invalid email format');
-        }
-
-        if (!validatePassword(password)) {
-          throw new Error('Password must be at least 8 characters long');
-        }
-
-        // Check if email already exists
-        const existingUser = await User.findOne({ email: email.toLowerCase() });
-        if (existingUser) {
-          throw new Error('User with this email already exists');
-        }
-
-        const newUser = new User({
-          name,
-          email: email.toLowerCase(),
-          password,
-          birthday: birthDateObj,
-          familyId: family._id,
-          role: 'user'
-        });
-
-        await newUser.save();
-
-        // Add user to family
-        family.members.push(newUser._id);
-        await family.save();
-
-        return {
-          id: newUser._id,
-          name: newUser.name,
-          type: 'User',
-          isMinor: false,
-          email: newUser.email,
-          photo: newUser.photo,
-          birthDate: newUser.birthday ? newUser.birthday.toISOString() : null
-        };
-      }
+      return {
+        id: player._id,
+        name: player.name,
+        isMinor: player.isMinor,
+        birthDate: player.birthDate.toISOString(),
+        sex: player.sex,
+        profImg: player.profImg
+      };
     },
     removeFamilyMember: async (_: unknown, { memberId }: { memberId: string }, { user }: { user: any }) => {
       if (!user) {
@@ -833,32 +709,17 @@ export const resolvers = {
         throw new Error('Invalid member ID format');
       }
 
-      // Check if user has a familyId
-      if (!user.familyId) {
-        throw new Error('User does not belong to a family');
+      // Find the player and ensure it belongs to the current user
+      const player = await Player.findOne({ _id: memberId, parent: user._id });
+      if (!player) {
+        throw new Error('Family member not found');
       }
 
-      // Find user's family using familyId
-      const family = await Family.findById(user.familyId);
-
-      if (!family) {
-        throw new Error('Family not found');
-      }
-
-      // Check if user is primary contact (only primary contact can remove members)
-      if (family.primaryContact.toString() !== user._id.toString()) {
-        throw new Error('Only the primary contact can remove family members');
-      }
-
-      // Remove member from family
-      family.members = family.members.filter(member => member.toString() !== memberId);
-      await family.save();
-
-      // Remove familyId from the member
-      await User.findByIdAndUpdate(memberId, { $unset: { familyId: 1 } });
-      await Player.findByIdAndUpdate(memberId, { $unset: { familyId: 1 } });
+      await Player.findByIdAndDelete(memberId);
 
       return 'Family member removed successfully';
     }
   }
-}; 
+};
+
+export default resolvers; 

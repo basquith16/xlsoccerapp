@@ -9,13 +9,12 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="md:col-span-2">
-            <div className="flex items-center mb-4">
+            <div className="flex items-center">
               <img 
-                src="/img/logo.webp" 
-                alt="XL Soccer World" 
-                className="h-12 w-auto mr-3"
+                src="/logo.png" 
+                alt="SOFIVE Lake Nona" 
+                className="h-16 w-auto"
               />
-              <h3 className="text-xl font-bold">XL Soccer World</h3>
             </div>
             <p className="text-slate-300 mb-4">
               Premier youth soccer training, leagues, and camps in Lake Nona. 
@@ -74,7 +73,7 @@ const Footer = () => {
             <div className="space-y-2">
               <p className="text-slate-300">
                 <strong>Address:</strong><br />
-                XL Soccer World<br />
+                SOFIVE Soccer Center<br />
                 Lake Nona, Orlando, FL
               </p>
               <p className="text-slate-300">
@@ -89,7 +88,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-slate-700 mt-8 pt-8 text-center">
           <p className="text-slate-300">
-            © {new Date().getFullYear()} XL Soccer World. All rights reserved.
+            © {new Date().getFullYear()} SOFIVE Soccer Center. All rights reserved.
           </p>
         </div>
       </div>

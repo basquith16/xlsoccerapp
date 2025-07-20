@@ -2,23 +2,20 @@ import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_FAMILY_MEMBERS } from '../graphql/queries';
 import { ADD_FAMILY_MEMBER, REMOVE_FAMILY_MEMBER } from '../graphql/mutations';
-import { GET_ME } from '../graphql/queries';
 import AddFamilyMemberModal from './AddFamilyMemberModal';
 
 interface FamilyMember {
   id: string;
   name: string;
-  type: 'User' | 'Player';
   isMinor: boolean;
-  email?: string;
-  photo?: string;
-  birthDate?: string;
+  birthDate: string;
+  sex: string;
+  profImg?: string;
 }
 
 const FamilySection: React.FC = () => {
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const { data: userData } = useQuery(GET_ME);
   const { data: familyData, loading, refetch } = useQuery(GET_FAMILY_MEMBERS);
 
   const [addFamilyMember] = useMutation(ADD_FAMILY_MEMBER, {
@@ -71,7 +68,7 @@ const FamilySection: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-800">Family</h2>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
         >
           Add Family Member
         </button>
@@ -94,68 +91,36 @@ const FamilySection: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {familyMembers.map((member: FamilyMember) => (
-            <div key={member.id} className="bg-gray-50 rounded-lg p-4 border">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                    {member.photo ? (
-                      <img src={member.photo} alt={member.name} className="w-10 h-10 rounded-full object-cover" />
-                    ) : (
-                      <span className="text-gray-600 font-semibold">
-                        {member.name.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-800">{member.name}</h3>
-                    <div className="flex items-center space-x-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        member.type === 'User' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                        {member.type}
-                      </span>
-                      {member.isMinor && (
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                          Minor
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                {userData?.me?.familyId && (
-                  <button
-                    onClick={() => handleRemoveMember(member.id)}
-                    className="text-red-500 hover:text-red-700 transition-colors"
-                    title="Remove family member"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                )}
+            <div key={member.id} className="bg-white rounded-lg shadow-xl p-4 border hover:shadow-2xl transition-shadow relative flex flex-col h-64">
+              {/* Age Badge - Top Right */}
+              <div className="absolute top-2 right-2">
+                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full font-medium">
+                  {getAge(member.birthDate)}
+                </span>
               </div>
-              
-              <div className="space-y-2 text-sm text-gray-600">
-                {member.email && (
-                  <div className="flex items-center space-x-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                    </svg>
-                    <span>{member.email}</span>
-                  </div>
-                )}
-                <div className="flex items-center space-x-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>Birthday: {formatDate(member.birthDate)}</span>
+
+              {/* Player Image - Much Bigger */}
+              <div className="flex justify-center flex-1 items-center">
+                <div className="w-40 h-40 bg-gray-100 rounded-full flex items-center justify-center">
+                  {member.sex === 'male' ? (
+                    <img 
+                      src="https://thumbs.dreamstime.com/b/vector-illustration-soccer-player-action-isolated-gray-background-vector-clip-art-illustration-built-layers-115992617.jpg?w=768"
+                      alt="Male Soccer Player"
+                      className="w-36 h-36 object-contain"
+                    />
+                  ) : (
+                    <img 
+                      src="https://media.istockphoto.com/id/2077956375/vector/female-football-player-running-with-ball-soccer-low-poly-isolated-vector-illustration.jpg?s=612x612&w=0&k=20&c=dBZSZWRSev3OwCsudf1qE-DWXb0MgIN7i7k_zDyRamo="
+                      alt="Female Soccer Player"
+                      className="w-36 h-36 object-contain"
+                    />
+                  )}
                 </div>
-                <div className="flex items-center space-x-2">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  <span>Age: {getAge(member.birthDate)}</span>
-                </div>
+              </div>
+
+              {/* Player Name - At the very bottom */}
+              <div className="text-center mt-auto pt-2">
+                <h3 className="font-medium text-gray-800 text-sm">{member.name}</h3>
               </div>
             </div>
           ))}

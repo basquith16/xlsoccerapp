@@ -55,6 +55,9 @@ const userSchema = new Schema({
         type: Date,
         default: Date.now()
     },
+    birthday: {
+        type: Date
+    },
     fees: {
         type: Array
     },

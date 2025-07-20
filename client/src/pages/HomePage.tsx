@@ -27,8 +27,8 @@ const HomePage = () => {
         
         {/* Content */}
         <div className="relative z-10 text-center text-white max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6">
-            Welcome to XL Soccer World
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+            Welcome to SOFIVE Soccer Center
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto">
             Premier youth soccer training, leagues, and camps in Lake Nona. 
@@ -54,7 +54,7 @@ const HomePage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-slate-900 mb-4">
-              Why Choose XL Soccer World?
+              Why Choose SOFIVE Soccer Center?
             </h2>
             <p className="text-lg text-slate-700 max-w-2xl mx-auto">
               We provide the best youth soccer experience with professional coaching, 
@@ -177,7 +177,7 @@ const HomePage = () => {
             Ready to Get Started?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto">
-            Join hundreds of families who trust XL Soccer World for their child's 
+            Join hundreds of families who trust SOFIVE Soccer Center for their child's 
             soccer development and fun.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">

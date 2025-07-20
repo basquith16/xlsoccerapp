@@ -19,7 +19,6 @@ export interface IUser extends Document {
   players?: mongoose.Types.ObjectId;
   joinedDate: Date;
   birthday?: Date;
-  familyId?: mongoose.Types.ObjectId;
   fees?: any[];
   active: boolean;
   correctPassword(candidatePassword: string, userPassword: string): Promise<boolean>;
@@ -82,10 +81,6 @@ const userSchema = new Schema({
   },
   birthday: {
     type: Date
-  },
-  familyId: {
-    type: Schema.Types.ObjectId,
-    ref: 'Family'
   },
   fees: {
     type: Array

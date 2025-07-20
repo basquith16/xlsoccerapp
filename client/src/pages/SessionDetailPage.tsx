@@ -194,7 +194,7 @@ const SessionDetailPage = () => {
                     <MapPin className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
                     <div>
                       <p className="text-detail font-semibold text-slate-900">Location</p>
-                      <p className="text-detail text-slate-700">XL Soccer World Nona</p>
+                      <p className="text-detail text-slate-700">SOFIVE Soccer Center Nona</p>
                     </div>
                   </div>
 

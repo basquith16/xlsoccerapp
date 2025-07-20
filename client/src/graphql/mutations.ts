@@ -179,11 +179,10 @@ export const ADD_FAMILY_MEMBER = gql`
     addFamilyMember(input: $input) {
       id
       name
-      type
       isMinor
-      email
-      photo
       birthDate
+      sex
+      profImg
     }
   }
 `;

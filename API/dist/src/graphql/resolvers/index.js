@@ -94,6 +94,21 @@ export const resolvers = {
                 nodes: await Review.find({}),
                 totalCount: await Review.countDocuments({})
             };
+        },
+        familyMembers: async (_, __, { user }) => {
+            if (!user) {
+                throw new Error('Not authenticated');
+            }
+            // Get all players where the current user is the parent
+            const familyMembers = await Player.find({ parent: user._id });
+            return familyMembers.map(player => ({
+                id: player._id,
+                name: player.name,
+                isMinor: player.isMinor,
+                birthDate: player.birthDate.toISOString(),
+                sex: player.sex,
+                profImg: player.profImg
+            }));
         }
     },
     Session: {
@@ -582,6 +597,45 @@ export const resolvers = {
                     errors: [{ message: 'Failed to process password reset request', code: 'RESET_REQUEST_FAILED' }]
                 };
             }
+        },
+        addFamilyMember: async (_, { input }, { user }) => {
+            if (!user) {
+                throw new Error('Not authenticated');
+            }
+            const { name, birthDate, sex, isMinor } = input;
+            // Create a Player for the family member
+            const player = new Player({
+                name,
+                birthDate: new Date(birthDate),
+                sex,
+                parent: user._id,
+                isMinor
+            });
+            await player.save();
+            return {
+                id: player._id,
+                name: player.name,
+                isMinor: player.isMinor,
+                birthDate: player.birthDate.toISOString(),
+                sex: player.sex,
+                profImg: player.profImg
+            };
+        },
+        removeFamilyMember: async (_, { memberId }, { user }) => {
+            if (!user) {
+                throw new Error('Not authenticated');
+            }
+            if (!validateObjectId(memberId)) {
+                throw new Error('Invalid member ID format');
+            }
+            // Find the player and ensure it belongs to the current user
+            const player = await Player.findOne({ _id: memberId, parent: user._id });
+            if (!player) {
+                throw new Error('Family member not found');
+            }
+            await Player.findByIdAndDelete(memberId);
+            return 'Family member removed successfully';
         }
     }
 };
+export default resolvers;
