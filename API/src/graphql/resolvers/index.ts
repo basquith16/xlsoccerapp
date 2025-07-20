@@ -5,6 +5,7 @@ import Session from '../../../models/sessionModel';
 import Player from '../../../models/playerModel';
 import Booking from '../../../models/bookingModel';
 import Review from '../../../models/reviewModel';
+import Family from '../../../models/familyModel';
 import { validateEmail, validatePassword, sanitizeInput, validateObjectId, validateRequiredFields } from '../../utils/validation';
 import crypto from 'crypto';
 import StripeService from '../../services/stripeService';
@@ -101,6 +102,63 @@ export const resolvers = {
         nodes: await Review.find({}),
         totalCount: await Review.countDocuments({})
       };
+    },
+    family: async (_: unknown, __: unknown, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+      
+      const family = await Family.findOne({ 
+        $or: [
+          { primaryContact: user._id },
+          { members: user._id }
+        ]
+      }).populate('primaryContact').populate('members');
+      
+      return family;
+    },
+    familyMembers: async (_: unknown, __: unknown, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+      
+      const family = await Family.findOne({ 
+        $or: [
+          { primaryContact: user._id },
+          { members: user._id }
+        ]
+      });
+      
+      if (!family) {
+        return [];
+      }
+      
+      // Get all family members (both Users and Players)
+      const users = await User.find({ familyId: family._id });
+      const players = await Player.find({ familyId: family._id });
+      
+      const familyMembers = [
+        ...users.map(user => ({
+          id: user._id,
+          name: user.name,
+          type: 'User',
+          isMinor: user.birthday ? new Date().getFullYear() - new Date(user.birthday).getFullYear() < 18 : false,
+          email: user.email,
+          photo: user.photo,
+          birthDate: user.birthday ? user.birthday.toISOString() : null
+        })),
+        ...players.map(player => ({
+          id: player._id,
+          name: player.name,
+          type: 'Player',
+          isMinor: player.isMinor,
+          email: null,
+          photo: player.profImg,
+          birthDate: player.birthDate.toISOString()
+        }))
+      ];
+      
+      return familyMembers;
     }
   },
   Session: {

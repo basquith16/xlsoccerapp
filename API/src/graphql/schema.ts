@@ -9,6 +9,9 @@ export const typeDefs = gql`
     photo: String
     waiverSigned: Boolean!
     joinedDate: String!
+    birthday: String
+    familyId: ID
+    familyMembers: [FamilyMember!]
     active: Boolean
   }
 
@@ -21,6 +24,26 @@ export const typeDefs = gql`
     isMinor: Boolean!
     profImg: String
     parent: User
+    familyId: ID
+  }
+
+  type Family {
+    id: ID!
+    name: String!
+    primaryContact: User!
+    members: [FamilyMember!]!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type FamilyMember {
+    id: ID!
+    name: String!
+    type: String! # "User" or "Player"
+    isMinor: Boolean!
+    email: String
+    photo: String
+    birthDate: String
   }
 
   type Session {
@@ -192,6 +215,19 @@ export const typeDefs = gql`
     rating: Int!
   }
 
+  input AddFamilyMemberInput {
+    name: String!
+    birthDate: String!
+    sex: String!
+    email: String
+    password: String
+    passwordConfirm: String
+  }
+
+  input CreateFamilyInput {
+    name: String!
+  }
+
   type Query {
     # Public queries
     sessions(limit: Int = 10, offset: Int = 0): SessionConnection!
@@ -208,6 +244,10 @@ export const typeDefs = gql`
     booking(id: ID!): Booking
     reviews: [Review!]!
     review(id: ID!): Review
+    
+    # Family queries
+    family: Family
+    familyMembers: [FamilyMember!]!
   }
 
   type Mutation {
@@ -241,5 +281,10 @@ export const typeDefs = gql`
     createReview(input: CreateReviewInput!): Review!
     updateReview(id: ID!, review: String!, rating: Int!): Review!
     deleteReview(id: ID!): String!
+    
+    # Family operations
+    createFamily(input: CreateFamilyInput!): Family!
+    addFamilyMember(input: AddFamilyMemberInput!): FamilyMember!
+    removeFamilyMember(memberId: ID!): String!
   }
 `; 

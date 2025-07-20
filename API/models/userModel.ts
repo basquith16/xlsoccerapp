@@ -18,6 +18,8 @@ export interface IUser extends Document {
   waiverSigned: boolean;
   players?: mongoose.Types.ObjectId;
   joinedDate: Date;
+  birthday?: Date;
+  familyId?: mongoose.Types.ObjectId;
   fees?: any[];
   active: boolean;
   correctPassword(candidatePassword: string, userPassword: string): Promise<boolean>;
@@ -77,6 +79,13 @@ const userSchema = new Schema({
   joinedDate: {
     type: Date,
     default: Date.now()
+  },
+  birthday: {
+    type: Date
+  },
+  familyId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Family'
   },
   fees: {
     type: Array

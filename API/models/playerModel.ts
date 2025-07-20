@@ -9,6 +9,7 @@ export interface IPlayer extends Document {
   isMinor: boolean;
   profImg?: string;
   parent: mongoose.Types.ObjectId;
+  familyId?: mongoose.Types.ObjectId;
 }
 
 // Mongoose Schema
@@ -42,6 +43,10 @@ const playerSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
+  },
+  familyId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Family'
   }
 }, {
   toJSON: { virtuals: true },
