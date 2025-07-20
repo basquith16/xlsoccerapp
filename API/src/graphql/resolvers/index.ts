@@ -713,6 +713,175 @@ export const resolvers = {
           errors: [{ message: 'Failed to process password reset request', code: 'RESET_REQUEST_FAILED' }]
         };
       }
+    },
+    createFamily: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { name } = input;
+
+      // Check if user already has a family
+      const existingFamily = await Family.findOne({
+        $or: [
+          { primaryContact: user._id },
+          { members: user._id }
+        ]
+      });
+
+      if (existingFamily) {
+        throw new Error('User already belongs to a family');
+      }
+
+      // Create new family
+      const family = new Family({
+        name,
+        primaryContact: user._id,
+        members: [user._id]
+      });
+
+      await family.save();
+
+      // Update user with familyId
+      user.familyId = family._id;
+      await user.save();
+
+      return family;
+    },
+    addFamilyMember: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { name, birthDate, sex, email, password, passwordConfirm } = input;
+
+      // Find user's family
+      const family = await Family.findOne({
+        $or: [
+          { primaryContact: user._id },
+          { members: user._id }
+        ]
+      });
+
+      if (!family) {
+        throw new Error('User does not belong to a family');
+      }
+
+      const birthDateObj = new Date(birthDate);
+      const age = new Date().getFullYear() - birthDateObj.getFullYear();
+      const isMinor = age < 18;
+
+      if (isMinor) {
+        // Create a Player for minors
+        const player = new Player({
+          name,
+          birthDate: birthDateObj,
+          sex,
+          parent: user._id,
+          familyId: family._id,
+          isMinor: true
+        });
+
+        await player.save();
+
+        // Add player to family
+        family.members.push(player._id);
+        await family.save();
+
+        return {
+          id: player._id,
+          name: player.name,
+          type: 'Player',
+          isMinor: true,
+          email: null,
+          photo: player.profImg,
+          birthDate: player.birthDate.toISOString()
+        };
+      } else {
+        // Create a User for adults
+        if (!email || !password || !passwordConfirm) {
+          throw new Error('Email, password, and password confirmation are required for adult family members');
+        }
+
+        if (password !== passwordConfirm) {
+          throw new Error('Passwords do not match');
+        }
+
+        if (!validateEmail(email)) {
+          throw new Error('Invalid email format');
+        }
+
+        if (!validatePassword(password)) {
+          throw new Error('Password must be at least 8 characters long');
+        }
+
+        // Check if email already exists
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
+        if (existingUser) {
+          throw new Error('User with this email already exists');
+        }
+
+        const newUser = new User({
+          name,
+          email: email.toLowerCase(),
+          password,
+          birthday: birthDateObj,
+          familyId: family._id,
+          role: 'user'
+        });
+
+        await newUser.save();
+
+        // Add user to family
+        family.members.push(newUser._id);
+        await family.save();
+
+        return {
+          id: newUser._id,
+          name: newUser.name,
+          type: 'User',
+          isMinor: false,
+          email: newUser.email,
+          photo: newUser.photo,
+          birthDate: newUser.birthday ? newUser.birthday.toISOString() : null
+        };
+      }
+    },
+    removeFamilyMember: async (_: unknown, { memberId }: { memberId: string }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      if (!validateObjectId(memberId)) {
+        throw new Error('Invalid member ID format');
+      }
+
+      // Find user's family
+      const family = await Family.findOne({
+        $or: [
+          { primaryContact: user._id },
+          { members: user._id }
+        ]
+      });
+
+      if (!family) {
+        throw new Error('User does not belong to a family');
+      }
+
+      // Check if user is primary contact (only primary contact can remove members)
+      if (family.primaryContact.toString() !== user._id.toString()) {
+        throw new Error('Only the primary contact can remove family members');
+      }
+
+      // Remove member from family
+      family.members = family.members.filter(member => member.toString() !== memberId);
+      await family.save();
+
+      // Remove familyId from the member
+      await User.findByIdAndUpdate(memberId, { $unset: { familyId: 1 } });
+      await Player.findByIdAndUpdate(memberId, { $unset: { familyId: 1 } });
+
+      return 'Family member removed successfully';
     }
   }
 }; 

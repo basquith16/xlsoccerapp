@@ -11,6 +11,17 @@ export const GET_ME = gql`
       photo
       waiverSigned
       joinedDate
+      birthday
+      familyId
+      familyMembers {
+        id
+        name
+        type
+        isMinor
+        email
+        photo
+        birthDate
+      }
       active
     }
   }
@@ -18,7 +29,7 @@ export const GET_ME = gql`
 
 // Session Queries
 export const GET_SESSIONS = gql`
-  query GetSessions($limit: Int, $offset: Int) {
+  query GetSessions($limit: Int = 10, $offset: Int = 0) {
     sessions(limit: $limit, offset: $offset) {
       nodes {
         id
@@ -26,9 +37,6 @@ export const GET_SESSIONS = gql`
         sport
         demo
         description
-        birthYear
-        rosterLimit
-        availableSpots
         price
         priceDiscount
         startDates
@@ -40,6 +48,7 @@ export const GET_SESSIONS = gql`
         slug
         coverImage
         images
+        availableSpots
         createdAt
         updatedAt
       }
@@ -57,9 +66,6 @@ export const GET_SESSION = gql`
       sport
       demo
       description
-      birthYear
-      rosterLimit
-      availableSpots
       price
       priceDiscount
       startDates
@@ -71,6 +77,7 @@ export const GET_SESSION = gql`
       slug
       coverImage
       images
+      availableSpots
       createdAt
       updatedAt
     }
@@ -85,9 +92,6 @@ export const GET_SESSION_BY_SLUG = gql`
       sport
       demo
       description
-      birthYear
-      rosterLimit
-      availableSpots
       price
       priceDiscount
       startDates
@@ -99,6 +103,7 @@ export const GET_SESSION_BY_SLUG = gql`
       slug
       coverImage
       images
+      availableSpots
       createdAt
       updatedAt
     }

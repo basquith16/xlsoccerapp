@@ -171,4 +171,50 @@ export const CREATE_REVIEW = gql`
       createdAt
     }
   }
+`;
+
+// Family Mutations
+export const CREATE_FAMILY = gql`
+  mutation CreateFamily($input: CreateFamilyInput!) {
+    createFamily(input: $input) {
+      id
+      name
+      primaryContact {
+        id
+        name
+        email
+      }
+      members {
+        id
+        name
+        type
+        isMinor
+        email
+        photo
+        birthDate
+      }
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+export const ADD_FAMILY_MEMBER = gql`
+  mutation AddFamilyMember($input: AddFamilyMemberInput!) {
+    addFamilyMember(input: $input) {
+      id
+      name
+      type
+      isMinor
+      email
+      photo
+      birthDate
+    }
+  }
+`;
+
+export const REMOVE_FAMILY_MEMBER = gql`
+  mutation RemoveFamilyMember($memberId: ID!) {
+    removeFamilyMember(memberId: $memberId)
+  }
 `; 
