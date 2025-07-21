@@ -1,47 +1,48 @@
 import crypto from 'crypto';
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema, Model } from 'mongoose';
 import validator from 'validator';
 import bcrypt from 'bcryptjs';
 
+// TypeScript interfaces
 export interface IUser extends Document {
   club?: string;
   name: string;
   email: string;
-  password: string;
-  passwordConfirm?: string;
-  assignedSessions: Record<string, unknown>[];
+  assignedSessions: any[];
   photo: string;
   role: 'user' | 'coach' | 'admin';
-  waiverSigned: boolean;
-  joinedDate: Date;
-  active: boolean;
+  password: string;
   passwordChangedAt?: Date;
   passwordResetToken?: string;
   passwordResetExpires?: Date;
-  players?: mongoose.Types.ObjectId;
-  fees?: Record<string, unknown>[];
+  waiverSigned: boolean;
+  joinedDate: Date;
+  birthday?: Date;
+  fees?: any[];
+  active: boolean;
   correctPassword(candidatePassword: string, userPassword: string): Promise<boolean>;
   changedPasswordAfter(JWTTimestamp: number): boolean;
   createPasswordResetToken(): string;
 }
 
-const userSchema = new Schema<IUser>({
+// Mongoose Schema
+const userSchema = new Schema({
   club: {
     type: String
   },
   name: {
     type: String,
-    required: [true, 'Please tell us your name!']
+    required: true
   },
   email: {
     type: String,
-    required: [true, 'Please provide your email'],
+    required: true,
     unique: true,
     lowercase: true,
-    validate: [validator.isEmail, 'Please provide a valid email']
+    validate: [validator.isEmail]
   },
   assignedSessions: {
-    type: Schema.Types.Mixed,
+    type: Array,
     default: []
   },
   photo: {
@@ -55,20 +56,9 @@ const userSchema = new Schema<IUser>({
   },
   password: {
     type: String,
-    required: [true, 'Please provide a password'],
+    required: true,
     minlength: 8,
     select: false
-  },
-  passwordConfirm: {
-    type: String,
-    required: [true, 'Please confirm your password'],
-    select: false,
-    validate: {
-      validator: function(this: any, el: string) {
-        return el === this.password;
-      },
-      message: 'Passwords do not match!'
-    }
   },
   passwordChangedAt: {
     type: Date,
@@ -80,32 +70,30 @@ const userSchema = new Schema<IUser>({
     type: Boolean,
     default: false
   },
-  players: {
-    type: Schema.Types.ObjectId,
-    ref: 'Player'
-  },
   joinedDate: {
     type: Date,
     default: Date.now()
   },
+  birthday: {
+    type: Date
+  },
   fees: {
-    type: Schema.Types.Mixed
+    type: Array
   },
   active: {
     type: Boolean,
-    default: true,
-    select: false
+    default: true
   }
 }, {
   toJSON: { virtuals: true },
   toObject: { virtuals: true },
 });
 
+// Pre-save middleware
 userSchema.pre('save', async function(this: any, next) {
   if (!this.isModified('password')) return next();
 
   this.password = await bcrypt.hash(this.password, 12);
-  this.passwordConfirm = undefined;
   next();
 });
 
@@ -121,17 +109,18 @@ userSchema.pre(/^find/, function(this: any, next) {
   next();
 });
 
+// Instance methods
 userSchema.methods.correctPassword = async function(candidatePassword: string, userPassword: string): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, userPassword);
-}
+};
 
 userSchema.methods.changedPasswordAfter = function(JWTTimestamp: number): boolean {
-  if(this.passwordChangedAt) {
-    const changedTimestamp = parseInt(String(this.passwordChangedAt.getTime() / 1000), 10);
+  if (this.passwordChangedAt) {
+    const changedTimestamp = parseInt((this.passwordChangedAt.getTime() / 1000).toString(), 10);
     return JWTTimestamp < changedTimestamp;
   }
   return false;
-}
+};
 
 userSchema.methods.createPasswordResetToken = function(): string {
   const resetToken = crypto.randomBytes(32).toString('hex');
@@ -140,8 +129,16 @@ userSchema.methods.createPasswordResetToken = function(): string {
   this.passwordResetExpires = new Date(Date.now() + 10 * 60 * 1000);
 
   return resetToken;
-}
+};
 
+// Create and export model
 const User = mongoose.model<IUser>('User', userSchema);
+
+// Virtual for family members (players)
+userSchema.virtual('familyMembers', {
+  ref: 'Player',
+  localField: '_id',
+  foreignField: 'parent'
+});
 
 export default User; 

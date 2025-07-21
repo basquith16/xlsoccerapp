@@ -3,6 +3,9 @@ import { useQuery, useMutation } from '@apollo/client';
 import { GET_FAMILY_MEMBERS } from '../graphql/queries';
 import { ADD_FAMILY_MEMBER, REMOVE_FAMILY_MEMBER } from '../graphql/mutations';
 import AddFamilyMemberModal from './AddFamilyMemberModal';
+import Card from './ui/Card';
+import Loading from './ui/Loading';
+import Button from './ui/Button';
 
 interface FamilyMember {
   id: string;
@@ -50,8 +53,15 @@ const FamilySection: React.FC = () => {
 
   const getAge = (birthDate?: string) => {
     if (!birthDate) return 'N/A';
+    
+    // Handle both timestamp strings and date strings
+    const birth = new Date(parseInt(birthDate) || birthDate);
+    if (isNaN(birth.getTime())) {
+      console.warn('Invalid birthDate:', birthDate);
+      return 'N/A';
+    }
+    
     const today = new Date();
-    const birth = new Date(birthDate);
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
@@ -63,21 +73,19 @@ const FamilySection: React.FC = () => {
   const familyMembers = familyData?.familyMembers || [];
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+    <Card>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-gray-800">Family</h2>
-        <button
+        <Button
           onClick={() => setShowAddModal(true)}
           className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
         >
           Add Family Member
-        </button>
+        </Button>
       </div>
 
       {loading ? (
-        <div className="text-center py-4">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
-        </div>
+        <Loading text="Loading family members..." />
       ) : familyMembers.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-gray-500 mb-4">
@@ -91,7 +99,7 @@ const FamilySection: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {familyMembers.map((member: FamilyMember) => (
-            <div key={member.id} className="bg-white rounded-lg shadow-xl p-4 border hover:shadow-2xl transition-shadow relative flex flex-col h-64">
+            <Card key={member.id} variant="elevated" padding="sm" hover className="relative flex flex-col h-64">
               {/* Age Badge - Top Right */}
               <div className="absolute top-2 right-2">
                 <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full font-medium">
@@ -122,7 +130,7 @@ const FamilySection: React.FC = () => {
               <div className="text-center mt-auto pt-2">
                 <h3 className="font-medium text-gray-800 text-sm">{member.name}</h3>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
       )}
@@ -134,7 +142,7 @@ const FamilySection: React.FC = () => {
           onAdd={addFamilyMember}
         />
       )}
-    </div>
+    </Card>
   );
 };
 

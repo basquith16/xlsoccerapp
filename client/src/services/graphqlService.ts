@@ -7,7 +7,11 @@ import {
   GET_PLAYERS, 
   GET_PLAYER, 
   GET_MY_BOOKINGS, 
-  GET_REVIEWS 
+  GET_REVIEWS,
+  GET_FAMILY_MEMBERS,
+  GET_CUSTOMER,
+  GET_TRANSACTIONS,
+  GET_PAYMENT_METHODS
 } from '../graphql/queries';
 import { 
   SIGNUP, 
@@ -15,8 +19,15 @@ import {
   FORGOT_PASSWORD, 
   RESET_PASSWORD, 
   UPDATE_PASSWORD, 
+  UPDATE_ME,
   CREATE_BOOKING, 
-  CREATE_REVIEW 
+  CREATE_REVIEW,
+  ADD_FAMILY_MEMBER,
+  REMOVE_FAMILY_MEMBER,
+  CREATE_SETUP_INTENT,
+  ATTACH_PAYMENT_METHOD,
+  DETACH_PAYMENT_METHOD,
+  SET_DEFAULT_PAYMENT_METHOD
 } from '../graphql/mutations';
 
 // Authentication Hooks
@@ -38,6 +49,10 @@ export const useResetPassword = () => {
 
 export const useUpdatePassword = () => {
   return useMutation(UPDATE_PASSWORD);
+};
+
+export const useUpdateMe = () => {
+  return useMutation(UPDATE_ME);
 };
 
 // User Hooks
@@ -100,6 +115,14 @@ export const useMyBookings = () => {
   });
 };
 
+export const useFamilyMembers = () => {
+  const token = localStorage.getItem('token');
+  return useQuery(GET_FAMILY_MEMBERS, {
+    errorPolicy: 'all',
+    skip: !token, // Skip the query if no token exists
+  });
+};
+
 export const useCreateBooking = () => {
   return useMutation(CREATE_BOOKING);
 };
@@ -113,6 +136,56 @@ export const useReviews = () => {
 
 export const useCreateReview = () => {
   return useMutation(CREATE_REVIEW);
+};
+
+// Family Hooks
+export const useAddFamilyMember = () => {
+  return useMutation(ADD_FAMILY_MEMBER);
+};
+
+export const useRemoveFamilyMember = () => {
+  return useMutation(REMOVE_FAMILY_MEMBER);
+};
+
+// Billing Hooks
+export const useCustomer = () => {
+  const token = localStorage.getItem('token');
+  return useQuery(GET_CUSTOMER, {
+    errorPolicy: 'all',
+    skip: !token,
+  });
+};
+
+export const useTransactions = () => {
+  const token = localStorage.getItem('token');
+  return useQuery(GET_TRANSACTIONS, {
+    errorPolicy: 'all',
+    skip: !token,
+  });
+};
+
+export const usePaymentMethods = () => {
+  const token = localStorage.getItem('token');
+  return useQuery(GET_PAYMENT_METHODS, {
+    errorPolicy: 'all',
+    skip: !token,
+  });
+};
+
+export const useCreateSetupIntent = () => {
+  return useMutation(CREATE_SETUP_INTENT);
+};
+
+export const useAttachPaymentMethod = () => {
+  return useMutation(ATTACH_PAYMENT_METHOD);
+};
+
+export const useDetachPaymentMethod = () => {
+  return useMutation(DETACH_PAYMENT_METHOD);
+};
+
+export const useSetDefaultPaymentMethod = () => {
+  return useMutation(SET_DEFAULT_PAYMENT_METHOD);
 };
 
 // Utility functions for handling GraphQL responses

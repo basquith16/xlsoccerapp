@@ -1,0 +1,82 @@
+{
+  "users": [
+    {
+      "_id": "687d005a492ee1af60eea142",
+      "name": "Brian Asquith",
+      "email": "brian@xlsoccerworld.com",
+      "assignedSessions": [],
+      "photo": "default.jpg",
+      "role": "admin",
+      "password": "$2a$12$ZVZqjDXuvdlQ7rgRs3Xm/uwqdpB.bpaGIpXu6NB0.nAN0ZS/LfXs2",
+      "passwordChangedAt": "2025-07-20T14:42:34.878Z",
+      "waiverSigned": true,
+      "joinedDate": "2025-07-20T14:42:34.878Z",
+      "fees": [],
+      "active": true,
+      "__v": 0
+    },
+    {
+      "_id": "687d005b492ee1af60eea145",
+      "name": "Marcela Asquith",
+      "email": "marcela@test.com",
+      "assignedSessions": [],
+      "photo": "default.jpg",
+      "role": "user",
+      "password": "$2a$12$x.zXZWW19cHp10Q6w1Z.KOvxERJq9zSK4v.Fgs2H.nK57CpiKBr4W",
+      "passwordChangedAt": "2025-07-20T14:42:35.445Z",
+      "waiverSigned": true,
+      "joinedDate": "2025-07-20T14:42:35.445Z",
+      "fees": [],
+      "active": true,
+      "__v": 0
+    },
+    {
+      "_id": "687d005c492ee1af60eea147",
+      "name": "John Riley",
+      "email": "john@example.com",
+      "assignedSessions": [],
+      "photo": "user-19.jpg",
+      "role": "user",
+      "password": "$2a$12$ptrcwmPr6fELUK5mYcTEQucYnFuc0lL6TKCA9pfm/XEI3BBai40Pq",
+      "passwordChangedAt": "2025-07-20T14:42:36.018Z",
+      "waiverSigned": false,
+      "joinedDate": "2025-07-20T14:42:36.018Z",
+      "fees": [],
+      "active": true,
+      "__v": 0
+    },
+    {
+      "_id": "687d005c492ee1af60eea149",
+      "name": "Claude Davis",
+      "email": "claude@xlsoccerworld.com",
+      "assignedSessions": [],
+      "photo": "default",
+      "role": "coach",
+      "password": "$2a$12$WutNA1VWvIk75IN12xmM..KQxvOwP6UQ4OoiwAXaSaMnlfNp6ahJi",
+      "passwordChangedAt": "2025-07-20T14:42:36.580Z",
+      "waiverSigned": true,
+      "joinedDate": "2025-07-20T14:42:36.580Z",
+      "fees": [],
+      "active": true,
+      "__v": 0
+    },
+    {
+      "_id": "687d005d492ee1af60eea14b",
+      "name": "Gary Teale",
+      "email": "gary@xlsoccer.com",
+      "assignedSessions": [],
+      "photo": "default.jpg",
+      "role": "coach",
+      "password": "$2a$12$AtbtNnmu4IZbSF2bxEVOlORij5OjZtFfsL1K5PhuiCjOAj9HTDpUy",
+      "passwordChangedAt": "2025-07-20T14:42:37.135Z",
+      "waiverSigned": true,
+      "joinedDate": "2025-07-20T14:42:37.135Z",
+      "fees": [],
+      "active": true,
+      "__v": 0
+    }
+  ],
+  "players": [],
+  "sessions": [],
+  "bookings": []
+}

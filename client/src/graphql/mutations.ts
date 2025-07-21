@@ -16,11 +16,6 @@ export const SIGNUP = gql`
         joinedDate
         active
       }
-      errors {
-        message
-        code
-        field
-      }
     }
   }
 `;
@@ -39,11 +34,6 @@ export const LOGIN = gql`
         waiverSigned
         joinedDate
         active
-      }
-      errors {
-        message
-        code
-        field
       }
     }
   }
@@ -78,11 +68,6 @@ export const RESET_PASSWORD = gql`
         joinedDate
         active
       }
-      errors {
-        message
-        code
-        field
-      }
     }
   }
 `;
@@ -102,11 +87,22 @@ export const UPDATE_PASSWORD = gql`
         joinedDate
         active
       }
-      errors {
-        message
-        code
-        field
-      }
+    }
+  }
+`;
+
+export const UPDATE_ME = gql`
+  mutation UpdateMe($input: UpdateUserInput!) {
+    updateMe(input: $input) {
+      id
+      name
+      email
+      role
+      photo
+      waiverSigned
+      joinedDate
+      birthday
+      active
     }
   }
 `;
@@ -125,7 +121,10 @@ export const CREATE_BOOKING = gql`
         sport
         demo
         birthYear
-        rosterLimit
+        ageRange {
+          minAge
+          maxAge
+        }
         price
         startDates
         timeStart
@@ -135,6 +134,15 @@ export const CREATE_BOOKING = gql`
         id
         name
         email
+      }
+      player {
+        id
+        name
+        birthDate
+        sex
+        waiverSigned
+        isMinor
+        profImg
       }
     }
   }
@@ -190,5 +198,66 @@ export const ADD_FAMILY_MEMBER = gql`
 export const REMOVE_FAMILY_MEMBER = gql`
   mutation RemoveFamilyMember($memberId: ID!) {
     removeFamilyMember(memberId: $memberId)
+  }
+`;
+
+// Billing Mutations
+export const CREATE_SETUP_INTENT = gql`
+  mutation CreateSetupIntent($input: CreateSetupIntentInput!) {
+    createSetupIntent(input: $input) {
+      id
+      clientSecret
+      status
+    }
+  }
+`;
+
+export const ATTACH_PAYMENT_METHOD = gql`
+  mutation AttachPaymentMethod($input: AttachPaymentMethodInput!) {
+    attachPaymentMethod(input: $input) {
+      id
+      type
+      card {
+        id
+        brand
+        last4
+        exp_month
+        exp_year
+        fingerprint
+      }
+      billingDetails {
+        id
+        name
+        email
+      }
+    }
+  }
+`;
+
+export const DETACH_PAYMENT_METHOD = gql`
+  mutation DetachPaymentMethod($input: DetachPaymentMethodInput!) {
+    detachPaymentMethod(input: $input)
+  }
+`;
+
+export const SET_DEFAULT_PAYMENT_METHOD = gql`
+  mutation SetDefaultPaymentMethod($input: SetDefaultPaymentMethodInput!) {
+    setDefaultPaymentMethod(input: $input) {
+      id
+      email
+      name
+      defaultPaymentMethod {
+        id
+        type
+        card {
+          id
+          brand
+          last4
+          exp_month
+          exp_year
+          fingerprint
+        }
+      }
+    }
   }
 `; 

@@ -46,6 +46,170 @@ export class StripeService {
   }
 
   /**
+   * Get or create a Stripe customer for a user
+   */
+  static async getOrCreateCustomer(userId: string, email: string, name?: string) {
+    try {
+      // First, try to find existing customer by email
+      const existingCustomers = await stripe.customers.list({
+        email: email,
+        limit: 1,
+      });
+
+      if (existingCustomers.data.length > 0) {
+        return existingCustomers.data[0];
+      }
+
+      // Create new customer if not found
+      const customer = await stripe.customers.create({
+        email: email,
+        name: name,
+        metadata: {
+          userId: userId,
+        },
+      });
+
+      return customer;
+    } catch (error) {
+      console.error('Error getting/creating customer:', error);
+      throw new Error('Failed to get or create customer');
+    }
+  }
+
+  /**
+   * Get customer by ID
+   */
+  static async getCustomer(customerId: string) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      return customer;
+    } catch (error) {
+      console.error('Error retrieving customer:', error);
+      throw new Error('Failed to retrieve customer');
+    }
+  }
+
+  /**
+   * Get customer's payment methods
+   */
+  static async getPaymentMethods(customerId: string) {
+    try {
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card',
+      });
+      return paymentMethods.data;
+    } catch (error) {
+      console.error('Error retrieving payment methods:', error);
+      throw new Error('Failed to retrieve payment methods');
+    }
+  }
+
+  /**
+   * Attach a payment method to a customer
+   */
+  static async attachPaymentMethod(paymentMethodId: string, customerId: string) {
+    try {
+      const paymentMethod = await stripe.paymentMethods.attach(paymentMethodId, {
+        customer: customerId,
+      });
+      return paymentMethod;
+    } catch (error) {
+      console.error('Error attaching payment method:', error);
+      throw new Error('Failed to attach payment method');
+    }
+  }
+
+  /**
+   * Detach a payment method from a customer
+   */
+  static async detachPaymentMethod(paymentMethodId: string) {
+    try {
+      const paymentMethod = await stripe.paymentMethods.detach(paymentMethodId);
+      return paymentMethod;
+    } catch (error) {
+      console.error('Error detaching payment method:', error);
+      throw new Error('Failed to detach payment method');
+    }
+  }
+
+  /**
+   * Set default payment method for a customer
+   */
+  static async setDefaultPaymentMethod(customerId: string, paymentMethodId: string) {
+    try {
+      const customer = await stripe.customers.update(customerId, {
+        invoice_settings: {
+          default_payment_method: paymentMethodId,
+        },
+      });
+      return customer;
+    } catch (error) {
+      console.error('Error setting default payment method:', error);
+      throw new Error('Failed to set default payment method');
+    }
+  }
+
+  /**
+   * Create a setup intent for adding payment methods
+   */
+  static async createSetupIntent(customerId: string, returnUrl?: string) {
+    try {
+      const setupIntent = await stripe.setupIntents.create({
+        customer: customerId,
+        payment_method_types: ['card'],
+        usage: 'off_session',
+        return_url: returnUrl,
+      });
+
+      return {
+        id: setupIntent.id,
+        clientSecret: setupIntent.client_secret!,
+        status: setupIntent.status,
+      };
+    } catch (error) {
+      console.error('Error creating setup intent:', error);
+      throw new Error('Failed to create setup intent');
+    }
+  }
+
+  /**
+   * Get customer's payment history
+   */
+  static async getPaymentHistory(customerId: string, limit: number = 50) {
+    try {
+      const charges = await stripe.charges.list({
+        customer: customerId,
+        limit: limit,
+        expand: ['data.payment_intent'],
+      });
+
+      return charges.data.map(charge => ({
+        id: charge.id,
+        amount: charge.amount,
+        currency: charge.currency,
+        status: charge.status,
+        description: charge.description || 'Payment',
+        createdAt: new Date(charge.created * 1000).toISOString(),
+        paymentMethod: charge.payment_method_details?.card ? {
+          id: charge.payment_method,
+          type: 'card',
+          card: {
+            brand: charge.payment_method_details.card.brand,
+            last4: charge.payment_method_details.card.last4,
+            exp_month: charge.payment_method_details.card.exp_month,
+            exp_year: charge.payment_method_details.card.exp_year,
+            fingerprint: charge.payment_method_details.card.fingerprint,
+          },
+        } : null,
+      }));
+    } catch (error) {
+      console.error('Error retrieving payment history:', error);
+      throw new Error('Failed to retrieve payment history');
+    }
+  }
+
+  /**
    * Retrieve a payment intent
    */
   static async getPaymentIntent(paymentIntentId: string) {

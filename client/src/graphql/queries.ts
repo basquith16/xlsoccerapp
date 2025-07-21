@@ -27,6 +27,11 @@ export const GET_SESSIONS = gql`
         sport
         demo
         description
+        birthYear
+        ageRange {
+          minAge
+          maxAge
+        }
         price
         priceDiscount
         startDates
@@ -56,6 +61,11 @@ export const GET_SESSION = gql`
       sport
       demo
       description
+      birthYear
+      ageRange {
+        minAge
+        maxAge
+      }
       price
       priceDiscount
       startDates
@@ -82,6 +92,11 @@ export const GET_SESSION_BY_SLUG = gql`
       sport
       demo
       description
+      ageRange {
+        minAge
+        maxAge
+      }
+      rosterLimit
       price
       priceDiscount
       startDates
@@ -151,23 +166,43 @@ export const GET_MY_BOOKINGS = gql`
   query GetMyBookings {
     bookings {
       id
+      price
+      paid
+      createdAt
       session {
         id
         name
+        sport
+        demo
+        birthYear
+        ageRange {
+          minAge
+          maxAge
+        }
         price
-        coverImage
-        slug
-        trainer
         startDates
+        timeStart
+        timeEnd
+        description
+        slug
+        coverImage
+        images
+        availableSpots
       }
       user {
         id
         name
         email
       }
-      price
-      createdAt
-      paid
+      player {
+        id
+        name
+        birthDate
+        sex
+        waiverSigned
+        isMinor
+        profImg
+      }
     }
   }
 `;
@@ -206,6 +241,100 @@ export const GET_FAMILY_MEMBERS = gql`
       birthDate
       sex
       profImg
+    }
+  }
+`;
+
+// Billing Queries
+export const GET_CUSTOMER = gql`
+  query GetCustomer {
+    customer {
+      id
+      email
+      name
+      paymentMethods {
+        id
+        type
+        card {
+          id
+          brand
+          last4
+          exp_month
+          exp_year
+          fingerprint
+        }
+        billingDetails {
+          id
+          name
+          email
+          address {
+            line1
+            line2
+            city
+            state
+            postalCode
+            country
+          }
+        }
+      }
+      defaultPaymentMethod {
+        id
+        type
+        card {
+          id
+          brand
+          last4
+          exp_month
+          exp_year
+          fingerprint
+        }
+      }
+    }
+  }
+`;
+
+export const GET_TRANSACTIONS = gql`
+  query GetTransactions {
+    transactions {
+      id
+      amount
+      currency
+      status
+      description
+      createdAt
+      paymentMethod {
+        id
+        type
+        card {
+          id
+          brand
+          last4
+          exp_month
+          exp_year
+        }
+      }
+    }
+  }
+`;
+
+export const GET_PAYMENT_METHODS = gql`
+  query GetPaymentMethods {
+    paymentMethods {
+      id
+      type
+      card {
+        id
+        brand
+        last4
+        exp_month
+        exp_year
+        fingerprint
+      }
+      billingDetails {
+        id
+        name
+        email
+      }
     }
   }
 `; 

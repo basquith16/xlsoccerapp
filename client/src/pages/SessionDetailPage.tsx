@@ -4,18 +4,21 @@ import { useQuery, useMutation } from '@apollo/client';
 import { Star, Calendar, Clock, Users, MapPin, DollarSign, User } from 'lucide-react';
 import Button from '../components/ui/Button';
 import PaymentForm from '../components/PaymentForm';
+import PlayerSelectionModal from '../components/PlayerSelectionModal';
 import { useAuth } from '../hooks/useAuth';
 import { GET_SESSION_BY_SLUG } from '../graphql/queries';
 import { CREATE_BOOKING } from '../graphql/mutations';
 import { useMyBookings } from '../services/graphqlService';
-import { Session } from '../types';
+import { Session, Player } from '../types';
 
 const SessionDetailPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState('');
   const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [showPlayerSelection, setShowPlayerSelection] = useState(false);
   const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null);
 
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -39,12 +42,19 @@ const SessionDetailPage = () => {
 
   const handleBooking = () => {
     if (!session) return;
+    setShowPlayerSelection(true);
+  };
+
+  const handlePlayerSelect = (player: Player) => {
+    setSelectedPlayer(player);
+    setShowPlayerSelection(false);
     setShowPaymentForm(true);
   };
 
   const handlePaymentSuccess = () => {
     setBookingSuccess(true);
     setShowPaymentForm(false);
+    setSelectedPlayer(null);
     setTimeout(() => {
       navigate('/account');
     }, 2000);
@@ -53,11 +63,17 @@ const SessionDetailPage = () => {
   const handlePaymentError = (error: string) => {
     setBookingError(error);
     setShowPaymentForm(false);
+    setSelectedPlayer(null);
   };
 
-  const handlePaymentCancel = () => {
+  const handleCancelPlayerSelection = () => {
+    setShowPlayerSelection(false);
+    setSelectedPlayer(null);
+  };
+
+  const handleCancelPayment = () => {
     setShowPaymentForm(false);
-    setBookingError('');
+    setSelectedPlayer(null);
   };
 
   if (loading) {
@@ -165,8 +181,10 @@ const SessionDetailPage = () => {
                   <div className="flex items-center">
                     <Calendar className="h-5 w-5 text-slate-400 mr-3" aria-hidden="true" />
                     <div>
-                      <p className="text-detail font-semibold text-slate-900">Birth Year</p>
-                      <p className="text-detail text-slate-700">{session.birthYear}</p>
+                      <p className="text-detail font-semibold text-slate-900">Age Range</p>
+                      <p className="text-detail text-slate-700">
+                        {session.ageRange ? `${session.ageRange.minAge}-${session.ageRange.maxAge}` : 'All ages'}
+                      </p>
                     </div>
                   </div>
 
@@ -321,19 +339,29 @@ const SessionDetailPage = () => {
       </div>
 
       {/* Payment Form Overlay */}
-      {showPaymentForm && (
+      {showPaymentForm && selectedPlayer && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
             <PaymentForm
               sessionId={session.id}
               sessionName={session.name}
               price={session.price}
+              playerId={selectedPlayer.id}
               onSuccess={handlePaymentSuccess}
               onError={handlePaymentError}
-              onCancel={handlePaymentCancel}
+              onCancel={handleCancelPayment}
             />
           </div>
         </div>
+      )}
+
+      {/* Player Selection Modal */}
+      {showPlayerSelection && (
+        <PlayerSelectionModal
+          session={session}
+          onPlayerSelect={handlePlayerSelect}
+          onCancel={handleCancelPlayerSelection}
+        />
       )}
     </div>
   );

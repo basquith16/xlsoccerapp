@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import User from '../../../models/userModel';
-import Session from '../../../models/sessionModel';
-import Player from '../../../models/playerModel';
-import Booking from '../../../models/bookingModel';
-import Review from '../../../models/reviewModel';
+import User from '../../models/userModel.ts';
+import Session from '../../models/sessionModel.ts';
+import Player from '../../models/playerModel.ts';
+import Booking from '../../models/bookingModel.ts';
+import Review from '../../models/reviewModel.ts';
 import { validateEmail, validatePassword, sanitizeInput, validateObjectId, validateRequiredFields } from '../../utils/validation';
 import crypto from 'crypto';
 import StripeService from '../../services/stripeService';
@@ -79,10 +79,17 @@ export const resolvers = {
         throw new Error('Not authenticated');
       }
       
-      // Fetch user's bookings and populate session data
-      const bookings = await Booking.find({ user: user._id })
+      // Get all players where the current user is the parent
+      const familyPlayers = await Player.find({ parent: user._id });
+      const playerIds = familyPlayers.map(player => player._id);
+      
+      // Fetch all bookings for all family members and populate data
+      const bookings = await Booking.find({ 
+        player: { $in: playerIds } // All bookings go through Player records now
+      })
         .populate('session')
-        .populate('user', 'id name email');
+        .populate('user', 'id name email')
+        .populate('player');
       
       // Filter out any bookings with missing sessions
       const validBookings = bookings.filter(booking => booking.session);
@@ -102,22 +109,135 @@ export const resolvers = {
         totalCount: await Review.countDocuments({})
       };
     },
+    // Family queries
     familyMembers: async (_: unknown, __: unknown, { user }: { user: any }) => {
       if (!user) {
         throw new Error('Not authenticated');
       }
-      
-      // Get all players where the current user is the parent
-      const familyMembers = await Player.find({ parent: user._id });
-      
-      return familyMembers.map(player => ({
-        id: player._id,
-        name: player.name,
-        isMinor: player.isMinor,
-        birthDate: player.birthDate.toISOString(),
-        sex: player.sex,
-        profImg: player.profImg
-      }));
+      const players = await Player.find({ parent: user._id });
+      return players;
+    },
+
+    // Billing queries
+    customer: async (_: unknown, __: unknown, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      try {
+        const customer = await StripeService.getOrCreateCustomer(
+          user._id.toString(),
+          user.email,
+          user.name
+        );
+
+        const paymentMethods = await StripeService.getPaymentMethods(customer.id);
+
+        return {
+          id: customer.id,
+          email: customer.email,
+          name: customer.name,
+          paymentMethods: paymentMethods.map(pm => ({
+            id: pm.id,
+            type: pm.type,
+            card: pm.card ? {
+              id: pm.card.fingerprint || `card_${pm.id}`,
+              brand: pm.card.brand,
+              last4: pm.card.last4,
+              expMonth: pm.card.exp_month,
+              expYear: pm.card.exp_year,
+              fingerprint: pm.card.fingerprint,
+            } : null,
+            billingDetails: pm.billing_details ? {
+              id: `billing_${pm.id}`,
+              name: pm.billing_details.name,
+              email: pm.billing_details.email,
+              address: pm.billing_details.address ? {
+                line1: pm.billing_details.address.line1,
+                line2: pm.billing_details.address.line2,
+                city: pm.billing_details.address.city,
+                state: pm.billing_details.address.state,
+                postalCode: pm.billing_details.address.postal_code,
+                country: pm.billing_details.address.country,
+              } : null,
+            } : null,
+          })),
+          defaultPaymentMethod: customer.invoice_settings?.default_payment_method ? {
+            id: customer.invoice_settings.default_payment_method,
+            type: 'card',
+            // Note: We'd need to fetch the full payment method details here
+            // For simplicity, we'll just return the ID
+          } : null,
+        };
+      } catch (error) {
+        console.error('Error fetching customer:', error);
+        throw new Error('Failed to fetch customer information');
+      }
+    },
+
+    transactions: async (_: unknown, __: unknown, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      try {
+        const customer = await StripeService.getOrCreateCustomer(
+          user._id.toString(),
+          user.email,
+          user.name
+        );
+
+        const transactions = await StripeService.getPaymentHistory(customer.id);
+        return transactions;
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+        throw new Error('Failed to fetch transaction history');
+      }
+    },
+
+    paymentMethods: async (_: unknown, __: unknown, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      try {
+        const customer = await StripeService.getOrCreateCustomer(
+          user._id.toString(),
+          user.email,
+          user.name
+        );
+
+        const paymentMethods = await StripeService.getPaymentMethods(customer.id);
+
+        return paymentMethods.map(pm => ({
+          id: pm.id,
+          type: pm.type,
+          card: pm.card ? {
+            id: pm.card.fingerprint || `card_${pm.id}`,
+            brand: pm.card.brand,
+            last4: pm.card.last4,
+            expMonth: pm.card.exp_month,
+            expYear: pm.card.exp_year,
+            fingerprint: pm.card.fingerprint,
+          } : null,
+          billingDetails: pm.billing_details ? {
+            id: `billing_${pm.id}`,
+            name: pm.billing_details.name,
+            email: pm.billing_details.email,
+            address: pm.billing_details.address ? {
+              line1: pm.billing_details.address.line1,
+              line2: pm.billing_details.address.line2,
+              city: pm.billing_details.address.city,
+              state: pm.billing_details.address.state,
+              postalCode: pm.billing_details.address.postal_code,
+              country: pm.billing_details.address.country,
+            } : null,
+          } : null,
+        }));
+      } catch (error) {
+        console.error('Error fetching payment methods:', error);
+        throw new Error('Failed to fetch payment methods');
+      }
     }
   },
   Session: {
@@ -135,6 +255,8 @@ export const resolvers = {
       return new Date().toISOString();
     },
     id: (parent: any) => parent._id || parent.id,
+    // Backward compatibility: return birthYear if available
+    birthYear: (parent: any) => parent.birthYear || null,
     // Map database 'image' field to GraphQL 'images' field
     images: (parent: any) => parent.image || [],
     // Map database 'image' field to GraphQL 'coverImage' field (use first image)
@@ -218,6 +340,8 @@ export const resolvers = {
       return new Date().toISOString();
     },
     id: (parent: any) => parent._id || parent.id,
+    // Backward compatibility: return birthYear if available
+    birthYear: (parent: any) => parent.birthYear || null,
     // Map database 'image' field to GraphQL 'images' field
     images: (parent: any) => parent.image || [],
     // Map database 'image' field to GraphQL 'coverImage' field (use first image)
@@ -306,15 +430,48 @@ export const resolvers = {
       
       // If no session reference, throw an error
       throw new Error('No session associated with this booking');
+    },
+    player: async (parent: any) => {
+      // If player is already populated (object), return it
+      if (parent.player && typeof parent.player === 'object') {
+        return parent.player;
+      }
+      
+      // If player is not populated but we have a player ID (string/ObjectId), fetch it
+      if (parent.player && typeof parent.player === 'string') {
+        const player = await Player.findById(parent.player);
+        if (!player) {
+          // For existing bookings without proper player references, return null instead of throwing
+          console.warn(`Player not found for booking ${parent._id}, player ID: ${parent.player}`);
+          return null;
+        }
+        return player;
+      }
+      
+      // If no player reference, return null instead of throwing error
+      console.warn(`No player reference for booking ${parent._id}`);
+      return null;
     }
+  },
+  Player: {
+    id: (parent: any) => parent._id || parent.id,
+    birthDate: (parent: any) => parent.birthDate?.toISOString ? parent.birthDate.toISOString() : parent.birthDate,
+  },
+  User: {
+    id: (parent: any) => parent._id || parent.id,
+    birthday: (parent: any) => parent.birthday?.toISOString ? parent.birthday.toISOString() : parent.birthday,
   },
   Mutation: {
     signup: async (_: unknown, { input }: { input: any }) => {
-      const { name, email, password, passwordConfirm } = input;
+      console.log('=== SIGNUP ATTEMPT ===');
+      console.log('Input received:', JSON.stringify(input, null, 2));
+      
+      const { name, email, password, passwordConfirm, birthday } = input;
       
       // Input validation
-      const missingFields = validateRequiredFields(input, ['name', 'email', 'password', 'passwordConfirm']);
+      const missingFields = validateRequiredFields(input, ['name', 'email', 'password', 'passwordConfirm', 'birthday']);
       if (missingFields.length > 0) {
+        console.log('Missing fields:', missingFields);
         return {
           status: 'error',
           message: 'All fields are required',
@@ -323,6 +480,7 @@ export const resolvers = {
       }
 
       if (!validateEmail(email)) {
+        console.log('Invalid email format:', email);
         return {
           status: 'error',
           message: 'Invalid email format',
@@ -331,6 +489,7 @@ export const resolvers = {
       }
 
       if (!validatePassword(password)) {
+        console.log('Weak password');
         return {
           status: 'error',
           message: 'Password must be at least 8 characters long',
@@ -340,6 +499,7 @@ export const resolvers = {
       
       // Check if passwords match
       if (password !== passwordConfirm) {
+        console.log('Passwords do not match');
         return {
           status: 'error',
           message: 'Passwords do not match',
@@ -347,13 +507,44 @@ export const resolvers = {
         };
       }
 
+      // Validate birthday
+      const birthDate = new Date(birthday);
+      if (isNaN(birthDate.getTime())) {
+        console.log('Invalid birthday format:', birthday);
+        return {
+          status: 'error',
+          message: 'Invalid birthday format',
+          errors: [{ message: 'Invalid birthday format', code: 'INVALID_BIRTHDAY', field: 'birthday' }]
+        };
+      }
+
+      // Check age requirement (must be at least 13)
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+      
+      console.log('Age calculation:', { birthDate, actualAge });
+      
+      if (actualAge < 13) {
+        console.log('User too young:', actualAge);
+        return {
+          status: 'error',
+          message: 'You must be at least 13 years old to register',
+          errors: [{ message: 'You must be at least 13 years old to register', code: 'UNDERAGE', field: 'birthday' }]
+        };
+      }
+
       // Sanitize inputs
       const sanitizedName = sanitizeInput(name);
       const sanitizedEmail = email.toLowerCase().trim();
+      
+      console.log('Sanitized inputs:', { sanitizedName, sanitizedEmail });
 
       // Check if user already exists
       const existingUser = await User.findOne({ email: sanitizedEmail });
       if (existingUser) {
+        console.log('User already exists:', sanitizedEmail);
         return {
           status: 'error',
           message: 'User already exists',
@@ -361,16 +552,53 @@ export const resolvers = {
         };
       }
 
+      console.log('Creating new user...');
+      
       // Create new user
       const user = new User({
         name: sanitizedName,
         email: sanitizedEmail,
         password,
+        birthday: birthDate,
         role: 'user' // Default role
       });
 
-      await user.save();
+      try {
+        await user.save();
+        console.log('User saved successfully:', user._id);
+      } catch (error) {
+        console.error('Error saving user:', error);
+        return {
+          status: 'error',
+          message: 'Failed to create user',
+          errors: [{ message: 'Database error occurred', code: 'DATABASE_ERROR' }]
+        };
+      }
 
+      console.log('Creating Player record...');
+      
+      // Create a Player record for the user so they can book sessions for themselves
+      const player = new Player({
+        name: sanitizedName,
+        birthDate: birthDate,
+        sex: 'male', // Default, can be updated later
+        waiverSigned: false,
+        isMinor: actualAge < 18,
+        profImg: 'default.jpg',
+        parent: user._id
+      });
+
+      try {
+        await player.save();
+        console.log('Player saved successfully:', player._id);
+      } catch (error) {
+        console.error('Error saving player:', error);
+        // Don't fail the signup if player creation fails, just log it
+        console.log('Player creation failed, but user was created');
+      }
+
+      console.log('Generating JWT token...');
+      
       // Generate JWT token
       const token = jwt.sign(
         { id: user._id },
@@ -378,6 +606,8 @@ export const resolvers = {
         { expiresIn: '30d' }
       );
 
+      console.log('Signup successful! Returning response...');
+      
       return {
         status: 'success',
         message: 'User created successfully',
@@ -387,43 +617,34 @@ export const resolvers = {
     },
     login: async (_: unknown, { input }: { input: any }) => {
       const { email, password } = input;
+      
+      console.log('Login attempt for email:', email);
 
       // Input validation
       const missingFields = validateRequiredFields(input, ['email', 'password']);
       if (missingFields.length > 0) {
-        return {
-          status: 'error',
-          message: 'Email and password are required',
-          errors: [{ message: 'Email and password are required', code: 'MISSING_FIELDS' }]
-        };
+        throw new Error('Email and password are required');
       }
 
       if (!validateEmail(email)) {
-        return {
-          status: 'error',
-          message: 'Invalid email format',
-          errors: [{ message: 'Invalid email format', code: 'INVALID_EMAIL', field: 'email' }]
-        };
+        throw new Error('Invalid email format');
       }
 
       // Find user
       const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+      console.log('User found:', user ? 'Yes' : 'No');
       if (!user) {
-        return {
-          status: 'error',
-          message: 'Invalid credentials',
-          errors: [{ message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }]
-        };
+        throw new Error('Invalid credentials');
       }
+
+      console.log('User email in DB:', user.email);
+      console.log('Password field exists:', !!user.password);
 
       // Check password
       const isPasswordValid = await bcrypt.compare(password, user.password);
+      console.log('Password valid:', isPasswordValid);
       if (!isPasswordValid) {
-        return {
-          status: 'error',
-          message: 'Invalid credentials',
-          errors: [{ message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' }]
-        };
+        throw new Error('Invalid credentials');
       }
 
       // Generate JWT token
@@ -433,9 +654,10 @@ export const resolvers = {
         { expiresIn: '30d' }
       );
 
+      console.log('Login successful for user:', user.email);
+
       return {
         status: 'success',
-        message: 'Login successful',
         token,
         data: user
       };
@@ -445,11 +667,15 @@ export const resolvers = {
         throw new Error('Not authenticated');
       }
 
-      const { sessionId, price } = input;
+      const { sessionId, playerId, price } = input;
 
       // Validate input
       if (!validateObjectId(sessionId)) {
         throw new Error('Invalid session ID format');
+      }
+
+      if (!validateObjectId(playerId)) {
+        throw new Error('Invalid player ID format');
       }
 
       if (!price || price <= 0) {
@@ -460,6 +686,16 @@ export const resolvers = {
       const session = await Session.findById(sessionId);
       if (!session) {
         throw new Error('Session not found');
+      }
+
+      // Check if player exists and belongs to the user
+      const player = await Player.findById(playerId);
+      if (!player) {
+        throw new Error('Player not found');
+      }
+
+      if (player.parent.toString() !== user._id.toString()) {
+        throw new Error('Player does not belong to you');
       }
 
       // Check if user already has a booking for this session
@@ -476,15 +712,17 @@ export const resolvers = {
       const booking = new Booking({
         user: user._id,
         session: sessionId,
+        player: playerId,
         price,
         paid: false
       });
 
       await booking.save();
 
-      // Populate session and user data
+      // Populate session, user, and player data
       await booking.populate('session');
       await booking.populate('user');
+      await booking.populate('player');
 
       return booking;
     },
@@ -718,6 +956,180 @@ export const resolvers = {
       await Player.findByIdAndDelete(memberId);
 
       return 'Family member removed successfully';
+    },
+    updateMe: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { name, email, photo } = input;
+
+      // Validate email if provided
+      if (email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          throw new Error('Invalid email format');
+        }
+
+        // Check if email is already taken by another user
+        const existingUser = await User.findOne({ email: email.toLowerCase().trim(), _id: { $ne: user._id } });
+        if (existingUser) {
+          throw new Error('Email is already taken');
+        }
+      }
+
+      // Validate photo if provided (should be a Cloudinary URL)
+      if (photo !== undefined && photo !== null) {
+        if (typeof photo !== 'string') {
+          throw new Error('Photo must be a string');
+        }
+        if (!photo.startsWith('http') && !photo.startsWith('/img/')) {
+          throw new Error('Invalid photo URL format');
+        }
+      }
+
+      const updateData: any = {};
+      if (name) {
+        updateData.name = sanitizeInput(name);
+      }
+      if (email) {
+        updateData.email = email.toLowerCase().trim();
+      }
+      if (photo !== undefined) {
+        updateData.photo = photo; // Store Cloudinary URL or file path
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(
+        user._id,
+        updateData,
+        { new: true, runValidators: true }
+      );
+
+      if (!updatedUser) {
+        throw new Error('Failed to update user');
+      }
+
+      return updatedUser;
+    },
+
+    // Billing mutations
+    createSetupIntent: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      try {
+        const customer = await StripeService.getOrCreateCustomer(
+          user._id.toString(),
+          user.email,
+          user.name
+        );
+
+        const setupIntent = await StripeService.createSetupIntent(
+          customer.id,
+          input.returnUrl
+        );
+
+        return setupIntent;
+      } catch (error) {
+        console.error('Error creating setup intent:', error);
+        throw new Error('Failed to create setup intent');
+      }
+    },
+
+    attachPaymentMethod: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { paymentMethodId } = input;
+
+      try {
+        const customer = await StripeService.getOrCreateCustomer(
+          user._id.toString(),
+          user.email,
+          user.name
+        );
+
+        const paymentMethod = await StripeService.attachPaymentMethod(paymentMethodId, customer.id);
+
+        return {
+          id: paymentMethod.id,
+          type: paymentMethod.type,
+          card: paymentMethod.card ? {
+            id: paymentMethod.card.fingerprint || `card_${paymentMethod.id}`,
+            brand: paymentMethod.card.brand,
+            last4: paymentMethod.card.last4,
+            expMonth: paymentMethod.card.exp_month,
+            expYear: paymentMethod.card.exp_year,
+            fingerprint: paymentMethod.card.fingerprint,
+          } : null,
+          billingDetails: paymentMethod.billing_details ? {
+            id: `billing_${paymentMethod.id}`,
+            name: paymentMethod.billing_details.name,
+            email: paymentMethod.billing_details.email,
+            address: paymentMethod.billing_details.address ? {
+              line1: paymentMethod.billing_details.address.line1,
+              line2: paymentMethod.billing_details.address.line2,
+              city: paymentMethod.billing_details.address.city,
+              state: paymentMethod.billing_details.address.state,
+              postalCode: paymentMethod.billing_details.address.postal_code,
+              country: paymentMethod.billing_details.address.country,
+            } : null,
+          } : null,
+        };
+      } catch (error) {
+        console.error('Error attaching payment method:', error);
+        throw new Error('Failed to attach payment method');
+      }
+    },
+
+    detachPaymentMethod: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { paymentMethodId } = input;
+
+      try {
+        await StripeService.detachPaymentMethod(paymentMethodId);
+        return 'Payment method removed successfully';
+      } catch (error) {
+        console.error('Error detaching payment method:', error);
+        throw new Error('Failed to remove payment method');
+      }
+    },
+
+    setDefaultPaymentMethod: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { paymentMethodId } = input;
+
+      try {
+        const customer = await StripeService.getOrCreateCustomer(
+          user._id.toString(),
+          user.email,
+          user.name
+        );
+
+        const updatedCustomer = await StripeService.setDefaultPaymentMethod(customer.id, paymentMethodId);
+
+        return {
+          id: updatedCustomer.id,
+          email: updatedCustomer.email,
+          name: updatedCustomer.name,
+          paymentMethods: [], // This would need to be populated separately
+          defaultPaymentMethod: {
+            id: paymentMethodId,
+            type: 'card',
+          },
+        };
+      } catch (error) {
+        console.error('Error setting default payment method:', error);
+        throw new Error('Failed to set default payment method');
+      }
     }
   }
 };

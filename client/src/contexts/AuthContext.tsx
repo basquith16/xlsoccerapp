@@ -44,7 +44,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     if (meData?.me) {
       // Successfully got user data
-      console.log('Me query successful, setting user:', meData.me);
       setUser(meData.me);
       setLoading(false);
     }
@@ -87,7 +86,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         variables: { input: userData }
       });
       
+      console.log('AuthContext: Raw signup response:', data);
       const response = handleMutationResponse(data.signup);
+      console.log('AuthContext: Handled response:', response);
       
       if (response.success && response.data) {
         // Store token

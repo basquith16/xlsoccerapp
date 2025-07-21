@@ -1,10 +1,12 @@
 import { ApolloServer } from '@apollo/server';
 import { startStandaloneServer } from '@apollo/server/standalone';
-import { typeDefs } from './schema.js';
+import { typeDefs } from './schema.ts';
 import jwt from 'jsonwebtoken';
-import User from '../../models/userModel';
-import { resolvers } from './resolvers/index.js';
-import { isRateLimited, getClientIP } from '../middleware/rateLimiter.js';
+import User from '../models/userModel.ts';
+import { resolvers } from './resolvers/index.ts';
+import { isRateLimited, getClientIP } from '../middleware/rateLimiter.ts';
+
+console.log('🔄 Loading updated server.ts with correct schema import...');
 
 export const createApolloServer = () => {
   return new ApolloServer({

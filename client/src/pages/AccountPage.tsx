@@ -1,21 +1,85 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Users, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, MapPin, Users, ChevronDown, ChevronUp, Clock, DollarSign } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useMyBookings } from '../services/graphqlService';
-import { Session } from '../types';
+import { useMyBookings, useFamilyMembers } from '../services/graphqlService';
+import { Session, Player } from '../types';
 import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Loading from '../components/ui/Loading';
+import Error from '../components/ui/Error';
 import FamilySection from '../components/FamilySection';
+import EditProfileModal from '../components/EditProfileModal';
+import BillingPanel from '../components/BillingPanel';
 
 const AccountPage = () => {
   const { user, logout } = useAuth();
   const { data: bookingsData, loading, error, refetch } = useMyBookings();
+  const { data: familyData, refetch: refetchFamilyMembers } = useFamilyMembers();
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
+  const [activePlayerTab, setActivePlayerTab] = useState<string>('all');
+  const [showEditProfile, setShowEditProfile] = useState(false);
 
-  // Extract bookings from GraphQL response
+  // Helper function to get user photo URL
+  const getUserPhotoUrl = (userPhoto?: string) => {
+    if (!userPhoto) {
+      return '/img/users/default.jpg';
+    }
+    
+    // If it's already a full URL (Cloudinary), return as is
+    if (userPhoto.startsWith('http')) {
+      return userPhoto;
+    }
+    
+    // If it's a local file path, return the full path
+    if (userPhoto.startsWith('/img/')) {
+      return userPhoto;
+    }
+    
+    // Default to users directory
+    return `/img/users/${userPhoto}`;
+  };
+
+  // Refetch family members when user changes
+  React.useEffect(() => {
+    if (user && refetchFamilyMembers) {
+      refetchFamilyMembers();
+    }
+  }, [user, refetchFamilyMembers]);
+
+  // Extract bookings and family members from GraphQL response
   const myBookings = bookingsData?.bookings || [];
+  const familyMembers = familyData?.familyMembers || [];
+
+  // Group bookings by player
+  const bookingsByPlayer = myBookings.reduce((acc: any, booking: any) => {
+    const playerId = booking.player?.id || 'unknown';
+    if (!acc[playerId]) {
+      acc[playerId] = [];
+    }
+    acc[playerId].push(booking);
+    return acc;
+  }, {});
+
+  // Get current player's bookings
+  const currentPlayerBookings = activePlayerTab === 'all' 
+    ? myBookings 
+    : bookingsByPlayer[activePlayerTab] || [];
 
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleEditProfile = () => {
+    setShowEditProfile(true);
+  };
+
+  const handleCloseEditProfile = () => {
+    setShowEditProfile(false);
+  };
+
+  const handleProfileUpdateSuccess = () => {
+    // Refresh the page to get updated user data
+    window.location.reload();
   };
 
   const toggleBookingExpansion = (bookingId: string) => {
@@ -57,11 +121,11 @@ const AccountPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* User Profile */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <Card>
               <div className="text-center mb-6">
                 {user.photo ? (
                   <img
-                    src={user.photo.startsWith('/img/') ? user.photo : `/img/users/${user.photo}`}
+                    src={getUserPhotoUrl(user.photo)}
                     alt={user.name}
                     className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
                   />
@@ -110,11 +174,15 @@ const AccountPage = () => {
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-200">
-                <Button variant="outline" className="w-full">
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleEditProfile}
+                >
                   Edit Profile
                 </Button>
               </div>
-            </div>
+            </Card>
           </div>
 
           {/* Right Column - Family and Sessions */}
@@ -122,18 +190,21 @@ const AccountPage = () => {
             {/* Family Section */}
             <FamilySection />
 
+            {/* Billing Panel */}
+            <BillingPanel />
+
             {/* My Sessions */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6">My Sessions</h3>
+            <Card>
+              <h3 className="text-xl font-semibold text-gray-900 mb-6">Booked Sessions</h3>
 
               {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-xl-green"></div>
-                </div>
+                <Loading text="Loading your sessions..." />
               ) : error ? (
                 <div className="text-center py-8">
-                  <p className="text-gray-600 mb-4">An error occurred while loading your sessions</p>
-                  <Button onClick={() => window.location.reload()}>Try Again</Button>
+                  <Error message="An error occurred while loading your sessions" />
+                  <div className="mt-4">
+                    <Button onClick={() => window.location.reload()}>Try Again</Button>
+                  </div>
                 </div>
               ) : myBookings.length === 0 ? (
                 <div className="text-center py-8">
@@ -144,12 +215,43 @@ const AccountPage = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
+                  {/* Player Tabs */}
+                  <div className="border-b border-gray-200">
+                    <nav className="-mb-px flex space-x-8">
+                      <button
+                        onClick={() => setActivePlayerTab('all')}
+                        className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                          activePlayerTab === 'all'
+                            ? 'border-blue-500 text-blue-600'
+                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                        }`}
+                      >
+                        All Family
+                      </button>
+                      {familyMembers.map((player: Player) => (
+                        <button
+                          key={player.id}
+                          onClick={() => setActivePlayerTab(player.id)}
+                          className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                            activePlayerTab === player.id
+                              ? 'border-blue-500 text-blue-600'
+                              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          }`}
+                        >
+                          {player.name}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
+
                   <div className="mb-4">
                     <span className="text-sm text-gray-600">
-                      {myBookings.length} session{myBookings.length !== 1 ? 's' : ''} booked
+                      {currentPlayerBookings.length} session{currentPlayerBookings.length !== 1 ? 's' : ''} booked
+                      {activePlayerTab !== 'all' && ` for ${familyMembers.find((p: Player) => p.id === activePlayerTab)?.name}`}
                     </span>
                   </div>
-                  {myBookings.map((booking: any) => {
+
+                  {currentPlayerBookings.map((booking: any) => {
                     if (!booking) return null;
                     const isExpanded = expandedBookings.has(booking.id);
                     
@@ -164,6 +266,11 @@ const AccountPage = () => {
                               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                 {booking.session.demo}
                               </span>
+                              {booking.player && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                  {booking.player.name}
+                                </span>
+                              )}
                             </div>
                           
                             <h4 className="text-lg font-semibold text-gray-900 mb-2">
@@ -172,6 +279,8 @@ const AccountPage = () => {
 
                             <div className="flex items-center text-sm text-gray-600">
                               <span>${booking.session.price}</span>
+                              <span className="mx-2">•</span>
+                              <span>Player: {booking.player?.name || 'Unknown'}</span>
                             </div>
 
                             {/* Expanded Content */}
@@ -181,6 +290,10 @@ const AccountPage = () => {
                                   <div className="flex items-center">
                                     <Users className="h-4 w-4 mr-2" />
                                     <span>Coach: {booking.session.trainer && booking.session.trainer.trim() !== '' ? booking.session.trainer : 'TBD'}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <Users className="h-4 w-4 mr-2" />
+                                    <span>Player: {booking.player?.name || 'Unknown'}</span>
                                   </div>
                                   {booking.session.startDates && booking.session.startDates.length > 0 && (
                                     <div className="flex items-start">
@@ -228,10 +341,19 @@ const AccountPage = () => {
                   })}
                 </div>
               )}
-            </div>
+            </Card>
           </div>
         </div>
       </div>
+
+      {/* Edit Profile Modal */}
+      {showEditProfile && user && (
+        <EditProfileModal
+          user={user}
+          onClose={handleCloseEditProfile}
+          onSuccess={handleProfileUpdateSuccess}
+        />
+      )}
     </div>
   );
 };

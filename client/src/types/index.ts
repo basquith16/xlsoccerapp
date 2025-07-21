@@ -1,6 +1,6 @@
 // User types
 export interface User {
-  _id: string;
+  id: string;
   name: string;
   email: string;
   photo?: string;
@@ -9,12 +9,13 @@ export interface User {
   assignedSessions?: string[];
   waiverSigned: boolean;
   joinedDate: string;
+  birthday?: string;
   active: boolean;
 }
 
 // Session types
 export interface Session {
-  _id: string;
+  id: string;
   sport: 'soccer' | 'basketball' | 'volleyball' | 'camp' | 'futsal' | 'football';
   demo: 'boys' | 'girls' | 'coed';
   name: string;
@@ -24,6 +25,10 @@ export interface Session {
   startDates: string[];
   endDate: string[];
   birthYear: number;
+  ageRange?: {
+    minAge: number;
+    maxAge: number;
+  };
   timeStart: string;
   timeEnd: string;
   trainers?: User[];
@@ -37,9 +42,10 @@ export interface Session {
 
 // Booking types
 export interface Booking {
-  _id: string;
+  id: string;
   session: Session;
   user: User;
+  player: Player;
   price: number;
   createdAt: string;
   paid: boolean;
@@ -47,7 +53,7 @@ export interface Booking {
 
 // Review types
 export interface Review {
-  _id: string;
+  id: string;
   review: string;
   rating: number;
   createdAt: string;
@@ -57,14 +63,14 @@ export interface Review {
 
 // Player types
 export interface Player {
-  _id: string;
+  id: string;
   name: string;
-  birthYear: number;
-  gender: 'male' | 'female';
-  photo?: string;
-  teams: string[];
+  birthDate: string;
+  sex: 'male' | 'female';
   waiverSigned: boolean;
-  account: string; // User ID
+  isMinor: boolean;
+  profImg?: string;
+  parent: string; // User ID
 }
 
 // API Response types
@@ -94,6 +100,7 @@ export interface RegisterFormData {
   email: string;
   password: string;
   passwordConfirm: string;
+  birthday: string;
 }
 
 export interface UpdateProfileFormData {

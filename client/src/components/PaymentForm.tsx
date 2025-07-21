@@ -13,6 +13,7 @@ interface PaymentFormProps {
   sessionId: string;
   sessionName: string;
   price: number;
+  playerId: string;
   onSuccess: () => void;
   onError: (error: string) => void;
   onCancel: () => void;
@@ -39,6 +40,7 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({
   sessionId,
   sessionName,
   price,
+  playerId,
   onSuccess,
   onError,
   onCancel,
@@ -81,6 +83,11 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({
 
     setLoading(true);
 
+    // Debug logging
+    console.log('PaymentForm - playerId:', playerId);
+    console.log('PaymentForm - sessionId:', sessionId);
+    console.log('PaymentForm - price:', price);
+
     try {
       // Step 1: Create payment intent
       const { data: paymentData } = await createPaymentIntent({
@@ -113,11 +120,13 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({
       }
 
       // Step 3: Create booking
+      console.log('Creating booking with playerId:', playerId);
       const { data: bookingData } = await createBooking({
         variables: {
           input: {
             sessionId,
             price,
+            playerId,
           },
         },
       });

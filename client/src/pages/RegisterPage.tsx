@@ -9,6 +9,7 @@ const RegisterPage = () => {
     email: '',
     password: '',
     passwordConfirm: '',
+    birthday: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -32,6 +33,22 @@ const RegisterPage = () => {
       errors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = 'Please enter a valid email';
+    }
+
+    if (!formData.birthday) {
+      errors.birthday = 'Birthday is required';
+    } else {
+      const birthDate = new Date(formData.birthday);
+      const today = new Date();
+      const age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
+      
+      if (actualAge < 13) {
+        errors.birthday = 'You must be at least 13 years old to register';
+      } else if (actualAge > 100) {
+        errors.birthday = 'Please enter a valid birthday';
+      }
     }
 
     if (!formData.password) {
@@ -66,7 +83,7 @@ const RegisterPage = () => {
       if (result.success) {
         navigate('/account');
       } else {
-        setError(result.error || 'Registration failed');
+        setError((result as any).message || 'Registration failed');
       }
     } catch (err) {
       setError('An unexpected error occurred');
@@ -149,6 +166,26 @@ const RegisterPage = () => {
               />
               {validationErrors.email && (
                 <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="birthday" className="block text-sm font-medium text-gray-700">
+                Birthday
+              </label>
+              <input
+                id="birthday"
+                name="birthday"
+                type="date"
+                required
+                value={formData.birthday}
+                onChange={handleChange}
+                className={`mt-1 appearance-none relative block w-full px-3 py-2 border ${
+                  validationErrors.birthday ? 'border-red-300' : 'border-gray-300'
+                } placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-xl-green focus:border-xl-green focus:z-10 sm:text-sm`}
+              />
+              {validationErrors.birthday && (
+                <p className="mt-1 text-sm text-red-600">{validationErrors.birthday}</p>
               )}
             </div>
 
@@ -258,4 +295,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage; 
+export default RegisterPage;

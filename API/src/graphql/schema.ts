@@ -39,7 +39,8 @@ export const typeDefs = gql`
     sport: String!
     demo: String!
     description: String
-    birthYear: Int!
+    birthYear: Int
+    ageRange: AgeRange
     rosterLimit: Int!
     availableSpots: Int!
     price: Float!
@@ -57,12 +58,19 @@ export const typeDefs = gql`
     updatedAt: String!
   }
 
+  type AgeRange {
+    minAge: Int!
+    maxAge: Int!
+  }
+
   type SessionSummary {
     id: ID!
     name: String!
     sport: String!
     demo: String!
     description: String
+    birthYear: Int
+    ageRange: AgeRange
     price: Float!
     priceDiscount: Float
     startDates: [String!]!
@@ -83,6 +91,7 @@ export const typeDefs = gql`
     id: ID!
     session: SessionSummary!
     user: User!
+    player: Player!
     price: Float!
     createdAt: String!
     paid: Boolean!
@@ -105,8 +114,9 @@ export const typeDefs = gql`
 
   type AuthResponse {
     status: String!
-    token: String!
+    token: String
     data: User
+    message: String
     errors: [Error!]
   }
 
@@ -130,11 +140,68 @@ export const typeDefs = gql`
     status: String!
   }
 
+  type Transaction {
+    id: String!
+    amount: Int!
+    currency: String!
+    status: String!
+    description: String!
+    createdAt: String!
+    paymentMethod: PaymentMethod
+  }
+
+  type PaymentMethod {
+    id: String!
+    type: String!
+    card: CardDetails
+    billingDetails: BillingDetails
+  }
+
+  type CardDetails {
+    id: ID
+    brand: String
+    last4: String
+    exp_month: Int
+    exp_year: Int
+    fingerprint: String
+  }
+
+  type BillingDetails {
+    id: ID
+    name: String
+    email: String
+    address: Address
+  }
+
+  type Address {
+    line1: String
+    line2: String
+    city: String
+    state: String
+    postalCode: String
+    country: String
+  }
+
+  type Customer {
+    id: String!
+    email: String!
+    name: String
+    paymentMethods: [PaymentMethod!]!
+    defaultPaymentMethod: PaymentMethod
+  }
+
+  type SetupIntent {
+    id: String!
+    clientSecret: String!
+    status: String!
+  }
+
   input CreateUserInput {
     name: String!
     email: String!
     password: String!
     passwordConfirm: String!
+    birthday: String!
   }
 
   input LoginInput {
@@ -153,7 +220,8 @@ export const typeDefs = gql`
     sport: String!
     demo: String!
     description: String
-    birthYear: Int!
+    birthYear: Int
+    ageRange: String!
     rosterLimit: Int!
     price: Float!
     priceDiscount: Float
@@ -173,6 +241,7 @@ export const typeDefs = gql`
     demo: String
     description: String
     birthYear: Int
+    ageRange: String
     rosterLimit: Int
     price: Float
     priceDiscount: Float
@@ -188,12 +257,29 @@ export const typeDefs = gql`
 
   input CreateBookingInput {
     sessionId: ID!
+    playerId: ID!
     price: Float!
   }
 
   input CreatePaymentIntentInput {
     sessionId: ID!
     price: Float!
+  }
+
+  input CreateSetupIntentInput {
+    returnUrl: String
+  }
+
+  input AttachPaymentMethodInput {
+    paymentMethodId: String!
+  }
+
+  input DetachPaymentMethodInput {
+    paymentMethodId: String!
+  }
+
+  input SetDefaultPaymentMethodInput {
+    paymentMethodId: String!
   }
 
   input CreateReviewInput {
@@ -228,6 +314,11 @@ export const typeDefs = gql`
     
     # Family queries
     familyMembers: [FamilyMember!]!
+    
+    # Billing queries
+    customer: Customer
+    transactions: [Transaction!]!
+    paymentMethods: [PaymentMethod!]!
   }
 
   type Mutation {
@@ -256,6 +347,10 @@ export const typeDefs = gql`
     
     # Payment operations
     createPaymentIntent(input: CreatePaymentIntentInput!): PaymentIntent!
+    createSetupIntent(input: CreateSetupIntentInput!): SetupIntent!
+    attachPaymentMethod(input: AttachPaymentMethodInput!): PaymentMethod!
+    detachPaymentMethod(input: DetachPaymentMethodInput!): String!
+    setDefaultPaymentMethod(input: SetDefaultPaymentMethodInput!): Customer!
     
     # Review operations
     createReview(input: CreateReviewInput!): Review!
