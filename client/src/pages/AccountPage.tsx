@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
-import { Calendar, MapPin, Users, ChevronDown, ChevronUp, Clock, DollarSign } from 'lucide-react';
+import { Calendar, Users, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { useMyBookings, useFamilyMembers } from '../services/graphqlService';
-import { Session, Player } from '../types';
+import { useBookings, useFamilyMembers } from '../services/graphqlService';
+import { Player } from '../types';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Error from '../components/ui/Error';
 import FamilySection from '../components/FamilySection';
 import EditProfileModal from '../components/EditProfileModal';
-import BillingPanel from '../components/BillingPanel';
+import BillingPanel from '../components/billing';
 
 const AccountPage = () => {
   const { user, logout } = useAuth();
-  const { data: bookingsData, loading, error, refetch } = useMyBookings();
+  const { data: bookingsData, loading, error } = useBookings();
   const { data: familyData, refetch: refetchFamilyMembers } = useFamilyMembers();
   const [expandedBookings, setExpandedBookings] = useState<Set<string>>(new Set());
   const [activePlayerTab, setActivePlayerTab] = useState<string>('all');

@@ -13,6 +13,26 @@ export interface User {
   active: boolean;
 }
 
+// Enums to match backend
+export enum SportType {
+  SOCCER = 'Soccer',
+  VOLLEYBALL = 'Volleyball',
+  BASKETBALL = 'Basketball',
+  TENNIS = 'Tennis',
+  BASEBALL = 'Baseball',
+  FOOTBALL = 'Football'
+}
+
+export enum DemoType {
+  YOUTH = 'Youth',
+  TEEN = 'Teen',
+  ADULT = 'Adult',
+  ELITE = 'Elite',
+  BEGINNER = 'Beginner',
+  INTERMEDIATE = 'Intermediate',
+  ADVANCED = 'Advanced'
+}
+
 // Session types
 export interface Session {
   id: string;
@@ -71,6 +91,67 @@ export interface Player {
   isMinor: boolean;
   profImg?: string;
   parent: string; // User ID
+}
+
+// Session Template types
+export interface SessionTemplate {
+  id: string;
+  name: string;
+  sport: SportType;
+  demo: DemoType;
+  description: string;
+  birthYear: string;
+  rosterLimit: number;
+  price: number;
+  trainer?: string;
+  staffOnly: boolean;
+  slug: string;
+  coverImage?: string;
+  images: string[];
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Schedule Period types
+export interface SchedulePeriod {
+  id: string;
+  templateId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  coachIds: string[];
+  capacity: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  templateInfo?: SessionTemplate;
+  instances?: any[];
+  instancesCount?: number;
+  activeInstancesCount?: number;
+}
+
+// Session Instance types
+export interface SessionInstance {
+  id: string;
+  periodId: string;
+  templateId: string;
+  name: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  coachIds: string[];
+  capacity: number;
+  bookedCount?: number;
+  notes?: string;
+  isActive: boolean;
+  isCancelled?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  templateInfo?: SessionTemplate;
+  periodInfo?: SchedulePeriod;
+  coachInfo?: User[];
+  bookingPercentage?: number;
 }
 
 // API Response types

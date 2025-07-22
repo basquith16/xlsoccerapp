@@ -7,12 +7,17 @@ import {
   BarChart3, 
   Home,
   Menu,
-  X
+  X,
+  CreditCard,
+  Shield
 } from 'lucide-react';
 import Card from '../components/ui/Card';
 import Loading from '../components/ui/Loading';
 import Error from '../components/ui/Error';
 import SessionsManagement from '../components/admin/SessionsManagement';
+import SessionTemplateManagement from '../components/admin/SessionTemplateManagement';
+import SchedulePeriodManagement from '../components/admin/SchedulePeriodManagement';
+import SessionInstanceManagement from '../components/admin/SessionInstanceManagement';
 import { useAuth } from '../hooks/useAuth';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
@@ -39,102 +44,63 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
 
   const navigationItems = [
     { id: 'sessions', label: 'Sessions', icon: Calendar, description: 'Manage soccer sessions' },
+    { id: 'templates', label: 'Templates', icon: Calendar, description: 'Manage session templates' },
+    { id: 'periods', label: 'Periods', icon: Calendar, description: 'Manage schedule periods' },
+    { id: 'instances', label: 'Instances', icon: Calendar, description: 'Manage session instances' },
     { id: 'users', label: 'Users', icon: Users, description: 'Manage user accounts' },
     { id: 'players', label: 'Players', icon: Users, description: 'Manage player profiles' },
-    { id: 'scheduling', label: 'Scheduling', icon: Calendar, description: 'Session scheduling' },
-    { id: 'financials', label: 'Financials', icon: DollarSign, description: 'Financial records & taxes' },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'Reports & insights' },
-    { id: 'settings', label: 'Settings', icon: Settings, description: 'System configuration' },
+    { id: 'billing', label: 'Billing', icon: CreditCard, description: 'View financial records' },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'View performance metrics' },
+    { id: 'settings', label: 'Settings', icon: Settings, description: 'Configure system settings' }
   ];
 
   const renderContent = () => {
     switch (activeSection) {
       case 'sessions':
         return <SessionsManagement />;
+      case 'templates':
+        return <SessionTemplateManagement />;
+      case 'periods':
+        return <SchedulePeriodManagement />;
+      case 'instances':
+        return <SessionInstanceManagement />;
       case 'users':
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">User Management</h2>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                Add User
-              </button>
-            </div>
-            <Card>
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">User management interface coming soon...</p>
-              </div>
-            </Card>
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">User management coming soon...</p>
           </div>
         );
       case 'players':
         return (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold text-gray-900">Player Management</h2>
-              <button className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
-                Add Player
-              </button>
-            </div>
-            <Card>
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Player management interface coming soon...</p>
-              </div>
-            </Card>
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Player management coming soon...</p>
           </div>
         );
-      case 'scheduling':
+      case 'billing':
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Session Scheduling</h2>
-            <Card>
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Scheduling interface coming soon...</p>
-              </div>
-            </Card>
-          </div>
-        );
-      case 'financials':
-        return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Financial Records</h2>
-            <Card>
-              <div className="text-center py-8">
-                <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Financial interface coming soon...</p>
-              </div>
-            </Card>
+          <div className="text-center py-8">
+            <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Billing management coming soon...</p>
           </div>
         );
       case 'analytics':
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">Analytics & Reports</h2>
-            <Card>
-              <div className="text-center py-8">
-                <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Analytics interface coming soon...</p>
-              </div>
-            </Card>
+          <div className="text-center py-8">
+            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">Analytics dashboard coming soon...</p>
           </div>
         );
       case 'settings':
         return (
-          <div className="space-y-6">
-            <h2 className="text-2xl font-bold text-gray-900">System Settings</h2>
-            <Card>
-              <div className="text-center py-8">
-                <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600">Settings interface coming soon...</p>
-              </div>
-            </Card>
+          <div className="text-center py-8">
+            <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">System settings coming soon...</p>
           </div>
         );
       default:
-        return <div>Select a section from the sidebar</div>;
+        return <SessionsManagement />;
     }
   };
 

@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import { createApolloServer, startApolloServer } from './graphql/server.ts';
+import { createApolloServer, startApolloServer } from './graphql/server';
 
 dotenv.config({path: './config.env'});
 
@@ -20,7 +20,7 @@ try {
 
 // Create and start Apollo Server
 const apolloServer = createApolloServer();
-const url = await startApolloServer(apolloServer);
+const url = await startApolloServer(apolloServer as any);
 console.log(`🚀 Apollo Server ready at ${url}`);
 
 process.on('uncaughtException', (err: Error) => {

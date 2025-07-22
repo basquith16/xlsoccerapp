@@ -1,7 +1,7 @@
 import nodemailer from 'nodemailer';
 import { convert } from 'html-to-text';
 import mg from 'nodemailer-mailgun-transport';
-import { IUser } from '../src/models/userModel.ts';
+import { IUser } from '../types/models';
 
 export default class Email {
   private to: string;
