@@ -2,6 +2,7 @@ import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import { 
   GET_ME, 
   GET_SESSIONS, 
+  GET_ADMIN_SESSIONS,
   GET_SESSION, 
   GET_SESSION_BY_SLUG,
   GET_PLAYERS, 
@@ -67,6 +68,13 @@ export const useMe = () => {
 // Session Hooks
 export const useSessions = (limit?: number, offset?: number) => {
   return useQuery(GET_SESSIONS, {
+    variables: { limit, offset },
+    errorPolicy: 'all',
+  });
+};
+
+export const useAdminSessions = (limit?: number, offset?: number) => {
+  return useQuery(GET_ADMIN_SESSIONS, {
     variables: { limit, offset },
     errorPolicy: 'all',
   });

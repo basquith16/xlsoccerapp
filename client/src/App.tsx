@@ -10,6 +10,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import SessionsPage from './pages/SessionsPage';
 import SessionDetailPage from './pages/SessionDetailPage';
 import AccountPage from './pages/AccountPage';
+import AdminDashboard from './pages/AdminDashboard';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
@@ -18,25 +19,40 @@ const App: React.FC = () => {
     <ErrorBoundary>
       <AuthProvider>
         <Router>
-          <Layout>
-            <Routes>
-              <Route path="/" element={<HomePage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-              <Route path="/sessions" element={<SessionsPage />} />
-              <Route path="/session/:slug" element={<SessionDetailPage />} />
-              <Route 
-                path="/account" 
-                element={
-                  <ProtectedRoute>
-                    <AccountPage />
-                  </ProtectedRoute>
-                } 
-              />
-            </Routes>
-          </Layout>
+          <Routes>
+            {/* Admin routes (no Layout wrapper) */}
+            <Route 
+              path="/admin/*" 
+              element={
+                <ProtectedRoute>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Regular routes with Layout wrapper */}
+            <Route path="/*" element={
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/login" element={<LoginPage />} />
+                  <Route path="/register" element={<RegisterPage />} />
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                  <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+                  <Route path="/sessions" element={<SessionsPage />} />
+                  <Route path="/session/:slug" element={<SessionDetailPage />} />
+                  <Route 
+                    path="/account" 
+                    element={
+                      <ProtectedRoute>
+                        <AccountPage />
+                      </ProtectedRoute>
+                    } 
+                  />
+                </Routes>
+              </Layout>
+            } />
+          </Routes>
         </Router>
       </AuthProvider>
     </ErrorBoundary>

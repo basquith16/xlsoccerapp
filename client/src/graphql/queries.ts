@@ -17,6 +17,49 @@ export const GET_ME = gql`
   }
 `;
 
+// Admin Session Queries
+export const GET_ADMIN_SESSIONS = gql`
+  query GetAdminSessions($limit: Int = 10, $offset: Int = 0) {
+    adminSessions(limit: $limit, offset: $offset) {
+      nodes {
+        id
+        name
+        sport
+        demo
+        description
+        birthYear
+        ageRange {
+          minAge
+          maxAge
+        }
+        price
+        priceDiscount
+        startDates
+        endDate
+        timeStart
+        timeEnd
+        trainer
+        trainers {
+          id
+          name
+        }
+        staffOnly
+        isActive
+        isPubliclyVisible
+        slug
+        coverImage
+        images
+        availableSpots
+        rosterLimit
+        createdAt
+        updatedAt
+      }
+      totalCount
+      hasNextPage
+    }
+  }
+`;
+
 // Session Queries
 export const GET_SESSIONS = gql`
   query GetSessions($limit: Int = 10, $offset: Int = 0) {
@@ -39,11 +82,18 @@ export const GET_SESSIONS = gql`
         timeStart
         timeEnd
         trainer
+        trainers {
+          id
+          name
+        }
         staffOnly
+        isActive
+        isPubliclyVisible
         slug
         coverImage
         images
         availableSpots
+        rosterLimit
         createdAt
         updatedAt
       }

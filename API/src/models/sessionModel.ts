@@ -24,6 +24,7 @@ export interface ISession extends Document {
   rosterLimit: number;
   slug: string;
   staffOnly: boolean;
+  active: boolean;
   description?: string;
   duration?: string;
   profileImages: string[];
@@ -121,6 +122,10 @@ const sessionSchema = new Schema({
   staffOnly: {
     type: Boolean,
     default: false
+  },
+  active: {
+    type: Boolean,
+    default: true
   },
   description: String,
   duration: String,

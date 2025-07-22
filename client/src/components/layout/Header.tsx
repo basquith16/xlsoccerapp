@@ -54,6 +54,14 @@ const Header = () => {
                 >
                   My Account
                 </Link>
+                {user?.role === 'admin' && (
+                  <Link 
+                    to="/admin" 
+                    className="text-white hover:text-blue-200 transition-colors text-sm focus:outline-none focus:text-blue-200 px-3 py-1 rounded-md"
+                  >
+                    Admin
+                  </Link>
+                )}
                 <div className="flex items-center space-x-4">
                   <span className="text-white font-medium">
                     Welcome, {user?.name || 'User'}

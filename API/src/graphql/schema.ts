@@ -50,7 +50,10 @@ export const typeDefs = gql`
     timeStart: String!
     timeEnd: String!
     trainer: String
+    trainers: [User!]
     staffOnly: Boolean!
+    isActive: Boolean!
+    isPubliclyVisible: Boolean!
     slug: String!
     coverImage: String
     images: [String!]
@@ -305,6 +308,7 @@ export const typeDefs = gql`
     me: User
     users: [User!]! # Admin only
     user(id: ID!): User # Admin only
+    adminSessions(limit: Int = 10, offset: Int = 0): SessionConnection! # Admin only
     players: [Player!]!
     player(id: ID!): Player
     bookings: [Booking!]!

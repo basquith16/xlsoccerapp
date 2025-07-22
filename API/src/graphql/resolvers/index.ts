@@ -38,6 +38,28 @@ export const resolvers = {
         hasNextPage
       };
     },
+    adminSessions: async (_: unknown, { limit = 100, offset = 0 }: { limit?: number; offset?: number }, { user }: { user: any }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Not authorized - Admin access required');
+      }
+      
+      // Admin can see all sessions, including staff-only ones
+      // Use lean() to bypass middleware and get plain objects
+      const sessions = await Session.find({})
+        .populate('trainers', 'name')
+        .lean()
+        .limit(limit)
+        .skip(offset);
+      
+      const totalCount = await Session.countDocuments({});
+      const hasNextPage = offset + limit < totalCount;
+      
+      return {
+        nodes: sessions,
+        totalCount,
+        hasNextPage
+      };
+    },
     session: async (_: unknown, { id }: { id: string }) => {
       if (!validateObjectId(id)) {
         throw new Error('Invalid session ID format');
@@ -241,6 +263,16 @@ export const resolvers = {
     }
   },
   Session: {
+    isActive: (session: any) => {
+      const now = new Date();
+      const endDate = new Date(session.endDate);
+      return now <= endDate;
+    },
+    isPubliclyVisible: (session: any) => {
+      const now = new Date();
+      const endDate = new Date(session.endDate);
+      return now <= endDate;
+    },
     endDate: (parent: any) => {
       // Ensure endDate is never null - use the last startDate if endDate is missing
       if (parent.endDate) {
@@ -1129,6 +1161,158 @@ export const resolvers = {
       } catch (error) {
         console.error('Error setting default payment method:', error);
         throw new Error('Failed to set default payment method');
+      }
+    },
+
+    // Session Management (Admin Only)
+    createSession: async (_: unknown, { input }: { input: any }, { user }: { user: any }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Not authorized - Admin access required');
+      }
+
+      try {
+        const session = new Session(input);
+        await session.save();
+        
+        // Log admin action
+        console.log(`Admin ${user.email} created session: ${session.name} (ID: ${session._id})`);
+        
+        return session;
+      } catch (error: any) {
+        console.error('Error creating session:', error);
+        throw new Error(error.message || 'Failed to create session');
+      }
+    },
+
+    updateSession: async (_: unknown, { id, input }: { id: string; input: any }, { user }: { user: any }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Not authorized - Admin access required');
+      }
+
+      if (!validateObjectId(id)) {
+        throw new Error('Invalid session ID format');
+      }
+
+      try {
+        const session = await Session.findByIdAndUpdate(
+          id,
+          { ...input, updatedAt: new Date() },
+          { new: true, runValidators: true }
+        );
+
+        if (!session) {
+          throw new Error('Session not found');
+        }
+
+        // Log admin action
+        console.log(`Admin ${user.email} updated session: ${session.name} (ID: ${session._id})`);
+        
+        return session;
+      } catch (error: any) {
+        console.error('Error updating session:', error);
+        throw new Error(error.message || 'Failed to update session');
+      }
+    },
+
+    deleteSession: async (_: unknown, { id }: { id: string }, { user }: { user: any }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Not authorized - Admin access required');
+      }
+
+      if (!validateObjectId(id)) {
+        throw new Error('Invalid session ID format');
+      }
+
+      try {
+        const session = await Session.findById(id);
+        if (!session) {
+          throw new Error('Session not found');
+        }
+
+        // Check if session has bookings
+        const bookingCount = await Booking.countDocuments({ session: id });
+        if (bookingCount > 0) {
+          throw new Error(`Cannot delete session with ${bookingCount} existing bookings`);
+        }
+
+        await Session.findByIdAndDelete(id);
+
+        // Log admin action
+        console.log(`Admin ${user.email} deleted session: ${session.name} (ID: ${session._id})`);
+        
+        return 'Session deleted successfully';
+      } catch (error: any) {
+        console.error('Error deleting session:', error);
+        throw new Error(error.message || 'Failed to delete session');
+      }
+    },
+
+    // User Management (Admin Only)
+    updateUser: async (_: unknown, { id, input }: { id: string; input: any }, { user }: { user: any }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Not authorized - Admin access required');
+      }
+
+      if (!validateObjectId(id)) {
+        throw new Error('Invalid user ID format');
+      }
+
+      try {
+        const updatedUser = await User.findByIdAndUpdate(
+          id,
+          { ...input, updatedAt: new Date() },
+          { new: true, runValidators: true }
+        );
+
+        if (!updatedUser) {
+          throw new Error('User not found');
+        }
+
+        // Log admin action
+        console.log(`Admin ${user.email} updated user: ${updatedUser.email} (ID: ${updatedUser._id})`);
+        
+        return updatedUser;
+      } catch (error: any) {
+        console.error('Error updating user:', error);
+        throw new Error(error.message || 'Failed to update user');
+      }
+    },
+
+    deleteUser: async (_: unknown, { id }: { id: string }, { user }: { user: any }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Not authorized - Admin access required');
+      }
+
+      if (!validateObjectId(id)) {
+        throw new Error('Invalid user ID format');
+      }
+
+      try {
+        const userToDelete = await User.findById(id);
+        if (!userToDelete) {
+          throw new Error('User not found');
+        }
+
+        // Prevent admin from deleting themselves
+        if (userToDelete._id.toString() === user._id.toString()) {
+          throw new Error('Cannot delete your own account');
+        }
+
+        // Check if user has bookings
+        const bookingCount = await Booking.countDocuments({ user: id });
+        if (bookingCount > 0) {
+          throw new Error(`Cannot delete user with ${bookingCount} existing bookings`);
+        }
+
+        await User.findByIdAndDelete(id);
+
+        // Log admin action
+        console.log(`Admin ${user.email} deleted user: ${userToDelete.email} (ID: ${userToDelete._id})`);
+        
+        return 'User deleted successfully';
+      } catch (error: any) {
+        console.error('Error deleting user:', error);
+        throw new Error(error.message || 'Failed to delete user');
       }
     }
   }
