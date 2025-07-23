@@ -1,20 +1,21 @@
 import React from 'react';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import Card from '../../ui/Card';
+import { Session } from '../../../types';
 
 interface SessionTableProps {
-  sessions: any[];
-  onViewSession: (session: any) => void;
-  onEditSession: (session: any) => void;
-  onDeleteSession: (session: any) => void;
+  sessions: Session[];
+  onViewSession: (session: Session) => void;
+  onEditSession: (session: Session) => void;
+  onDeleteSession: (session: Session) => void;
 }
 
-const SessionTable: React.FC<SessionTableProps> = ({
+const SessionTable: React.FC<SessionTableProps> = React.memo(({
   sessions,
   onViewSession,
   onEditSession,
   onDeleteSession
-}) => {
+}: SessionTableProps) => {
   return (
     <Card>
       <div className="overflow-x-auto">
@@ -42,23 +43,23 @@ const SessionTable: React.FC<SessionTableProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {sessions.map((session: any) => (
+            {sessions.map((session: Session) => (
               <tr key={session.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 whitespace-nowrap" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem' }}>
                   <div className="max-w-xs">
-                    <div className="text-sm font-medium text-gray-900 truncate">{session.name}</div>
+                    <div className="font-medium text-gray-900 truncate" style={{ fontSize: '1.2rem' }}>{session.name}</div>
                   </div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 whitespace-nowrap text-gray-900" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem', fontSize: '1.2rem' }}>
                   {session.trainer || 'Not assigned'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 whitespace-nowrap text-gray-900" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem', fontSize: '1.2rem' }}>
                   ${session.price}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                <td className="px-6 whitespace-nowrap text-gray-900" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem', fontSize: '1.2rem' }}>
                   {session.rosterLimit} players
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-6 whitespace-nowrap" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem' }}>
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                     session.isActive 
                       ? 'bg-green-100 text-green-800' 
@@ -67,7 +68,7 @@ const SessionTable: React.FC<SessionTableProps> = ({
                     {session.isActive ? 'Active' : 'Inactive'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-6 whitespace-nowrap font-medium" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem', fontSize: '1.2rem' }}>
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => onViewSession(session)}
@@ -105,6 +106,8 @@ const SessionTable: React.FC<SessionTableProps> = ({
       </div>
     </Card>
   );
-};
+});
+
+SessionTable.displayName = 'SessionTable';
 
 export default SessionTable; 

@@ -7,13 +7,15 @@ interface SessionFiltersProps {
   onSearchChange: (value: string) => void;
   filterStatus: string;
   onStatusChange: (value: string) => void;
+  onReset: () => void;
 }
 
 const SessionFilters: React.FC<SessionFiltersProps> = ({
   searchTerm,
   onSearchChange,
   filterStatus,
-  onStatusChange
+  onStatusChange,
+  onReset
 }) => {
   return (
     <Card>
@@ -41,6 +43,15 @@ const SessionFilters: React.FC<SessionFiltersProps> = ({
             <option value="active">Active</option>
             <option value="inactive">Inactive</option>
           </select>
+          {(searchTerm || filterStatus !== 'all') && (
+            <button
+              onClick={onReset}
+              className="px-3 py-2 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50"
+              style={{ fontSize: '1.2rem' }}
+            >
+              Reset
+            </button>
+          )}
         </div>
       </div>
     </Card>

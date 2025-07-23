@@ -3,6 +3,7 @@ import Session from '../../models/sessionModel';
 import Player from '../../models/playerModel';
 import { validateObjectId } from '../../utils/validation';
 import { IUser } from '../../types/models';
+import { AuthContext } from '../../types/context';
 
 export const bookingResolvers = {
   Query: {
@@ -97,36 +98,26 @@ export const bookingResolvers = {
   Booking: {
     id: (parent: any) => parent._id || parent.id,
     createdAt: (parent: any) => parent.createdAt?.toISOString ? parent.createdAt.toISOString() : parent.createdAt,
-    session: async (parent: any) => {
+    session: async (parent: any, _: unknown, { loaders }: AuthContext) => {
       if (parent.session && typeof parent.session === 'object') {
         return parent.session;
       }
       
       if (parent.session && typeof parent.session === 'string') {
-        const session = await Session.findById(parent.session);
-        if (!session) {
-          throw new Error('Session not found for this booking');
-        }
-        return session;
+        return await loaders.sessionLoader.load(parent.session);
       }
       
-      throw new Error('No session associated with this booking');
+      return null;
     },
-    player: async (parent: any) => {
+    player: async (parent: any, _: unknown, { loaders }: AuthContext) => {
       if (parent.player && typeof parent.player === 'object') {
         return parent.player;
       }
       
       if (parent.player && typeof parent.player === 'string') {
-        const player = await Player.findById(parent.player);
-        if (!player) {
-          console.warn(`Player not found for booking ${parent._id}, player ID: ${parent.player}`);
-          return null;
-        }
-        return player;
+        return await loaders.playerLoader.load(parent.player);
       }
       
-      console.warn(`No player reference for booking ${parent._id}`);
       return null;
     }
   }

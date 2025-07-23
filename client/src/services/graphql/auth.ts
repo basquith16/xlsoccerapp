@@ -8,8 +8,6 @@ import {
   UPDATE_PASSWORD,
   UPDATE_ME,
   DELETE_ME,
-  UPDATE_USER,
-  DELETE_USER,
   ADD_FAMILY_MEMBER,
   REMOVE_FAMILY_MEMBER
 } from '../../graphql/mutations';
@@ -41,14 +39,6 @@ export const useUpdateMe = () => {
 
 export const useDeleteMe = () => {
   return useMutation(DELETE_ME);
-};
-
-export const useUpdateUser = () => {
-  return useMutation(UPDATE_USER);
-};
-
-export const useDeleteUser = () => {
-  return useMutation(DELETE_USER);
 };
 
 export const useAddFamilyMember = () => {

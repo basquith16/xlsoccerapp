@@ -168,12 +168,8 @@ sessionSchema.pre('save', function(this: any, next) {
   next();
 });
 
-// Embedding coaches as part of sessions 
-sessionSchema.pre('save', async function(this: any, next) {
-  const coachesPromises = this.trainers.map(async (id: string) => await User.findById(id));
-  this.trainers = await Promise.all(coachesPromises);
-  next();
-});
+// Note: Removed N+1 query causing pre-save middleware
+// Trainers are now loaded using DataLoader when needed
 
 // Query Middleware
 sessionSchema.pre(/^find/, function(this: any, next) {

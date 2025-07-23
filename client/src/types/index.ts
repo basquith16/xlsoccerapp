@@ -11,39 +11,49 @@ export interface User {
   joinedDate: string;
   birthday?: string;
   active: boolean;
+  familyMembers?: Player[];
+}
+
+export interface Player {
+  id: string;
+  name: string;
+  birthDate: string;
+  sex: 'male' | 'female' | 'other';
+  waiverSigned: boolean;
+  isMinor: boolean;
+  profImg?: string;
+  parent?: User;
 }
 
 // Enums to match backend
 export enum SportType {
-  SOCCER = 'Soccer',
-  VOLLEYBALL = 'Volleyball',
-  BASKETBALL = 'Basketball',
-  TENNIS = 'Tennis',
-  BASEBALL = 'Baseball',
-  FOOTBALL = 'Football'
+  SOCCER = 'soccer',
+  BASKETBALL = 'basketball',
+  VOLLEYBALL = 'volleyball',
+  CAMP = 'camp',
+  FUTSAL = 'futsal',
+  FOOTBALL = 'football'
 }
 
 export enum DemoType {
-  YOUTH = 'Youth',
-  TEEN = 'Teen',
-  ADULT = 'Adult',
-  ELITE = 'Elite',
-  BEGINNER = 'Beginner',
-  INTERMEDIATE = 'Intermediate',
-  ADVANCED = 'Advanced'
+  BOYS = 'boys',
+  GIRLS = 'girls',
+  COED = 'coed'
 }
 
 // Session types
 export interface Session {
   id: string;
-  sport: 'soccer' | 'basketball' | 'volleyball' | 'camp' | 'futsal' | 'football';
-  demo: 'boys' | 'girls' | 'coed';
+  sport: SportType;
+  demo: DemoType;
   name: string;
   image?: string[];
+  images?: string[];
+  coverImage?: string;
   price: number;
   priceDiscount?: number;
   startDates: string[];
-  endDate: string[];
+  endDate: string;
   birthYear: number;
   ageRange?: {
     minAge: number;
@@ -51,13 +61,68 @@ export interface Session {
   };
   timeStart: string;
   timeEnd: string;
+  trainer?: string;
   trainers?: User[];
   rosterLimit: number;
+  availableSpots?: number;
   slug: string;
   staffOnly: boolean;
+  isActive: boolean;
+  isPubliclyVisible?: boolean;
   description?: string;
   duration?: string;
-  profileImages?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionTemplate {
+  id: string;
+  name: string;
+  sport: SportType;
+  description?: string;
+  birthYear: number;
+  ageRange?: {
+    minAge: number;
+    maxAge: number;
+  };
+  price: number;
+  priceDiscount?: number;
+  defaultDuration: number;
+  trainers?: User[];
+  isActive: boolean;
+  coverImage?: string;
+  images?: string[];
+  rosterLimit: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SchedulePeriod {
+  id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  template: SessionTemplate;
+  daysOfWeek: number[];
+  timeStart: string;
+  timeEnd: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SessionInstance {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isActive: boolean;
+  template: SessionTemplate;
+  period?: SchedulePeriod;
+  trainers?: User[];
+  availableSpots?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Booking types
@@ -79,6 +144,82 @@ export interface Review {
   createdAt: string;
   user: User;
   session?: Session;
+}
+
+// API Response types
+export interface AuthResponse {
+  status: 'success' | 'error';
+  data?: User;
+  message?: string;
+  errors?: Array<{
+    message: string;
+    code: string;
+    field?: string;
+  }>;
+}
+
+export interface LogoutResponse {
+  status: 'success' | 'error';
+  message: string;
+}
+
+export interface PaginatedResponse<T> {
+  nodes: T[];
+  totalCount: number;
+  hasNextPage: boolean;
+}
+
+// Component Props types
+export interface TableProps<T> {
+  data: T[];
+  loading?: boolean;
+  error?: string;
+}
+
+export interface FilterProps {
+  searchTerm: string;
+  onSearchChange: (term: string) => void;
+  statusFilter?: string;
+  onStatusFilterChange?: (status: string) => void;
+  onReset: () => void;
+  resultCount?: {
+    filtered: number;
+    total: number;
+  };
+}
+
+export interface PaginationProps {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  pageSize: number;
+  totalItems: number;
+}
+
+// Form types
+export interface CreateUserInput {
+  name: string;
+  email: string;
+  password: string;
+  passwordConfirm: string;
+  birthday: string;
+  role?: string;
+  active?: boolean;
+  waiverSigned?: boolean;
+}
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export interface UpdateUserInput {
+  name?: string;
+  email?: string;
+  photo?: string;
+  role?: string;
+  active?: boolean;
+  waiverSigned?: boolean;
 }
 
 // Player types

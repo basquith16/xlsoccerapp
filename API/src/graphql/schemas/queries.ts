@@ -11,9 +11,11 @@ export const querySchema = gql`
     me: User
     users: [User!]! # Admin only
     user(id: ID!): User # Admin only
+    adminUsers: UserConnection! # Admin only
     adminSessions(limit: Int = 10, offset: Int = 0): SessionConnection! # Admin only
-    players: [Player!]!
+    players(limit: Int = 50, offset: Int = 0): PlayerConnection!
     player(id: ID!): Player
+    adminPlayers(limit: Int = 50, offset: Int = 0): PlayerConnection! # Admin only
     bookings: [Booking!]!
     booking(id: ID!): Booking
     reviews: [Review!]!

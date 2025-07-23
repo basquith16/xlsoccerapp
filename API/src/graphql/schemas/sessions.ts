@@ -60,8 +60,8 @@ export const sessionSchema = gql`
   }
 
   type AgeRange {
-    minAge: Int!
-    maxAge: Int!
+    minAge: Int
+    maxAge: Int
   }
 
   input CreateSessionInput {

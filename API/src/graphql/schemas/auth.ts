@@ -11,6 +11,7 @@ export const authSchema = gql`
     joinedDate: String!
     birthday: String
     active: Boolean
+    familyMembers: [FamilyMember!]
   }
 
   type Player {
@@ -33,6 +34,18 @@ export const authSchema = gql`
     profImg: String
   }
 
+  type PlayerConnection {
+    nodes: [Player!]!
+    totalCount: Int!
+    hasNextPage: Boolean!
+  }
+
+  type UserConnection {
+    nodes: [User!]!
+    totalCount: Int!
+    hasNextPage: Boolean!
+  }
+
   type Error {
     message: String!
     code: String!
@@ -41,10 +54,14 @@ export const authSchema = gql`
 
   type AuthResponse {
     status: String!
-    token: String
     data: User
     message: String
     errors: [Error!]
+  }
+
+  type LogoutResponse {
+    status: String!
+    message: String!
   }
 
   type PasswordResetResponse {
@@ -59,6 +76,9 @@ export const authSchema = gql`
     password: String!
     passwordConfirm: String!
     birthday: String!
+    role: String
+    active: Boolean
+    waiverSigned: Boolean
   }
 
   input LoginInput {
@@ -70,6 +90,9 @@ export const authSchema = gql`
     name: String
     email: String
     photo: String
+    role: String
+    active: Boolean
+    waiverSigned: Boolean
   }
 
   input AddFamilyMemberInput {
@@ -77,5 +100,23 @@ export const authSchema = gql`
     birthDate: String!
     sex: String!
     isMinor: Boolean!
+  }
+
+  input CreatePlayerInput {
+    name: String!
+    birthDate: String!
+    sex: String!
+    parentId: ID!
+    waiverSigned: Boolean
+    profImg: String
+  }
+
+  input UpdatePlayerInput {
+    name: String
+    birthDate: String
+    sex: String
+    parentId: ID
+    waiverSigned: Boolean
+    profImg: String
   }
 `; 

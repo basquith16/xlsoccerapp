@@ -1,26 +1,24 @@
 import React, { useState } from 'react';
 import { 
-  Users, 
   Calendar, 
-  DollarSign, 
-  Settings, 
+  Users, 
+  CreditCard, 
   BarChart3, 
-  Home,
+  Settings,
   Menu,
-  X,
-  CreditCard,
-  Shield
+  X
 } from 'lucide-react';
+import { useAuth } from '../hooks/useAuth';
 import Card from '../components/ui/Card';
-import Loading from '../components/ui/Loading';
 import Error from '../components/ui/Error';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import SessionsManagement from '../components/admin/SessionsManagement';
 import SessionTemplateManagement from '../components/admin/SessionTemplateManagement';
 import SchedulePeriodManagement from '../components/admin/SchedulePeriodManagement';
 import SessionInstanceManagement from '../components/admin/SessionInstanceManagement';
-import { useAuth } from '../hooks/useAuth';
-import Header from '../components/layout/Header';
-import Footer from '../components/layout/Footer';
+import UserManagement from '../components/admin/users';
+import PlayerManagement from '../components/admin/players';
 
 interface AdminDashboardProps {}
 
@@ -65,19 +63,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       case 'instances':
         return <SessionInstanceManagement />;
       case 'users':
-        return (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">User management coming soon...</p>
-          </div>
-        );
+        return <UserManagement />;
       case 'players':
-        return (
-          <div className="text-center py-8">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Player management coming soon...</p>
-          </div>
-        );
+        return <PlayerManagement />;
       case 'billing':
         return (
           <div className="text-center py-8">
@@ -110,7 +98,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       <Header />
       
       {/* Main content area */}
-      <div className="flex flex-1 h-[calc(100vh-110px)]">
+      <div className="flex flex-1 h-[calc(100vh-80px-32px)]">
         {/* Mobile sidebar overlay */}
         {sidebarOpen && (
           <div 
@@ -120,9 +108,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         )}
 
         {/* Sidebar */}
-        <div className={`fixed top-[110px] left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:top-0 lg:inset-0 ${
+        <div className={`fixed top-[80px] left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:top-0 lg:inset-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`} style={{ height: 'calc(100vh - 110px)' }}>
+        }`} style={{ height: 'calc(100vh - 80px - 32px)' }}>
           <div className="flex flex-col h-full pt-4">
             {/* Sidebar header */}
             <div className="flex items-center justify-between h-12 px-6 border-b border-gray-200">
@@ -167,7 +155,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         <div className="flex-1 lg:ml-0 min-w-0">
           {/* Mobile header */}
           <div className="lg:hidden bg-white shadow-sm border-b border-gray-200">
-            <div className="flex items-center justify-between h-16 px-4">
+            <div className="flex items-center justify-between h-20 px-4">
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="p-2 rounded-md text-gray-400 hover:text-gray-600"
@@ -189,7 +177,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       </div>
       
       {/* Footer */}
-      <Footer />
+      <Footer compact />
     </div>
   );
 };

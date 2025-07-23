@@ -5,6 +5,8 @@ import jwt from 'jsonwebtoken';
 import User from '../models/userModel';
 import { resolvers } from './resolvers/index';
 import { isRateLimited, getClientIP } from '../middleware/rateLimiter';
+import { GraphQLError } from 'graphql';
+import { createDataLoaders } from '../utils/dataLoaders';
 
 console.log('🔄 Loading updated server.ts with correct schema import...');
 
@@ -13,9 +15,43 @@ export const createApolloServer = () => {
     typeDefs,
     resolvers,
     introspection: process.env.NODE_ENV !== 'production', // Disable introspection in production
+    plugins: [
+      {
+        // Query validation plugin
+        requestDidStart() {
+          return {
+            didResolveOperation({ request, document }) {
+              // Check query depth
+              const depth = getQueryDepth(document);
+              const maxDepth = 10; // Maximum allowed depth
+              
+              if (depth > maxDepth) {
+                throw new GraphQLError(
+                  `Query depth of ${depth} exceeds maximum allowed depth of ${maxDepth}`,
+                  { extensions: { code: 'QUERY_TOO_DEEP' } }
+                );
+              }
+              
+              // Check query complexity
+              const complexity = getQueryComplexity(document);
+              const maxComplexity = 1000; // Maximum allowed complexity
+              
+              if (complexity > maxComplexity) {
+                throw new GraphQLError(
+                  `Query complexity of ${complexity} exceeds maximum allowed complexity of ${maxComplexity}`,
+                  { extensions: { code: 'QUERY_TOO_COMPLEX' } }
+                );
+              }
+            }
+          };
+        }
+      }
+    ],
     formatError: (error) => {
-      // Log errors for debugging
-      console.error('GraphQL Error:', error);
+      // Log errors for debugging (only in development)
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('GraphQL Error:', error);
+      }
       
       // Return sanitized error to client
       return {
@@ -82,7 +118,7 @@ const getQueryComplexity = (document: any): number => {
 export const startApolloServer = async (apolloServer: ApolloServer) => {
   const { url } = await startStandaloneServer(apolloServer, {
     listen: { port: 4000 },
-    context: async ({ req }) => {
+    context: async ({ req, res }) => {
       // Request size validation
       const contentLength = parseInt(req.headers['content-length'] || '0');
       const maxSize = 1024 * 1024; // 1MB
@@ -98,11 +134,29 @@ export const startApolloServer = async (apolloServer: ApolloServer) => {
         throw new Error('Rate limit exceeded. Please try again later.');
       }
 
-      // Get the user token from the headers
-      const token = req.headers.authorization?.replace('Bearer ', '');
+      // Try to get token from httpOnly cookie first, then fallback to Authorization header
+      let token = null;
+      
+      // Parse cookies from request headers
+      const cookies = req.headers.cookie;
+      if (cookies) {
+        const cookieArray = cookies.split(';');
+        for (const cookie of cookieArray) {
+          const [name, value] = cookie.trim().split('=');
+          if (name === 'jwt') {
+            token = value;
+            break;
+          }
+        }
+      }
+      
+      // Fallback to Authorization header for backward compatibility
+      if (!token) {
+        token = req.headers.authorization?.replace('Bearer ', '');
+      }
       
       if (!token) {
-        return { user: null };
+        return { user: null, req, res, loaders: createDataLoaders() };
       }
 
       try {
@@ -113,12 +167,12 @@ export const startApolloServer = async (apolloServer: ApolloServer) => {
         const user = await User.findById(decoded.id);
         
         if (!user) {
-          return { user: null };
+          return { user: null, req, res, loaders: createDataLoaders() };
         }
 
-        return { user };
+        return { user, req, res, loaders: createDataLoaders() };
       } catch (error) {
-        return { user: null };
+        return { user: null, req, res, loaders: createDataLoaders() };
       }
     }
   });

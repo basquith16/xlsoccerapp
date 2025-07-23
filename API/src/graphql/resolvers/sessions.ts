@@ -1,6 +1,7 @@
 import Session from '../../models/sessionModel';
 import Booking from '../../models/bookingModel';
 import { validateObjectId } from '../../utils/validation';
+import { AuthContext } from '../../types/context';
 
 export const sessionResolvers = {
   Query: {
@@ -71,10 +72,50 @@ export const sessionResolvers = {
       }
 
       try {
-        const session = new Session(input);
+        console.log('Creating session with input:', JSON.stringify(input, null, 2));
+        
+        // Parse ageRange string into object if provided
+        if (input.ageRange) {
+          const ageRangeMatch = input.ageRange.match(/(\d+)-(\d+)/);
+          if (ageRangeMatch) {
+            input.ageRange = {
+              minAge: parseInt(ageRangeMatch[1]),
+              maxAge: parseInt(ageRangeMatch[2])
+            };
+          } else {
+            // If no match, try to parse as single age
+            const singleAge = parseInt(input.ageRange);
+            if (!isNaN(singleAge)) {
+              input.ageRange = {
+                minAge: singleAge,
+                maxAge: singleAge
+              };
+            } else {
+              throw new Error('Invalid age range format. Use format like "8-12" or "10"');
+            }
+          }
+        } else {
+          // Set default ageRange if not provided
+          input.ageRange = {
+            minAge: 0,
+            maxAge: 0
+          };
+        }
+
+        console.log('Processed input:', JSON.stringify(input, null, 2));
+
+        const session = new Session({
+          ...input,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        console.log('Session object created:', session);
+        
         await session.save();
         
         console.log(`Admin ${user.email} created session: ${session.name} (ID: ${session._id})`);
+        console.log('Saved session:', JSON.stringify(session.toObject(), null, 2));
         
         return session;
       } catch (error: any) {
@@ -145,154 +186,135 @@ export const sessionResolvers = {
   },
 
   Session: {
-    isActive: (session: any) => {
-      const now = new Date();
-      const endDate = new Date(session.endDate);
-      return now <= endDate;
-    },
-    isPubliclyVisible: (session: any) => {
-      const now = new Date();
-      const endDate = new Date(session.endDate);
-      return now <= endDate;
-    },
-    endDate: (parent: any) => {
-      if (parent.endDate) {
-        return parent.endDate.toISOString ? parent.endDate.toISOString() : parent.endDate;
-      }
-      if (parent.startDates && parent.startDates.length > 0) {
-        const lastStartDate = parent.startDates[parent.startDates.length - 1];
-        return lastStartDate.toISOString ? lastStartDate.toISOString() : lastStartDate;
-      }
-      return new Date().toISOString();
-    },
     id: (parent: any) => parent._id || parent.id,
-    birthYear: (parent: any) => parent.birthYear || null,
-    images: (parent: any) => parent.image || [],
-    coverImage: (parent: any) => parent.image && parent.image.length > 0 ? parent.image[0] : null,
-    availableSpots: async (parent: any) => {
-      const bookingCount = await Booking.countDocuments({ session: parent._id });
-      return Math.max(0, parent.rosterLimit - bookingCount);
-    },
-    trainer: (parent: any) => {
-      if (parent.trainers && Array.isArray(parent.trainers) && parent.trainers.length > 0) {
-        const firstTrainer = parent.trainers.find((trainer: any) => {
-          if (typeof trainer === 'object' && trainer.name) {
-            return !trainer.name.toLowerCase().includes('admin') && 
-                   !trainer.name.toLowerCase().includes('test');
-          }
-          return false;
-        });
-        
-        if (firstTrainer && typeof firstTrainer === 'object' && firstTrainer.name) {
-          return firstTrainer.name;
-        }
-      }
-      return null;
+    ageRange: (parent: any) => {
+      // If ageRange is null/undefined, return null (GraphQL will handle this)
+      if (!parent.ageRange) return null;
+      
+      // Ensure minAge and maxAge are numbers, defaulting to 0 if undefined
+      return {
+        minAge: typeof parent.ageRange.minAge === 'number' ? parent.ageRange.minAge : 0,
+        maxAge: typeof parent.ageRange.maxAge === 'number' ? parent.ageRange.maxAge : 0
+      };
     },
     startDates: (parent: any) => {
-      if (!parent.startDates || !Array.isArray(parent.startDates)) {
-        return [];
-      }
-      return parent.startDates.map((date: any) => {
-        if (date instanceof Date) {
-          return date.toISOString();
-        }
-        if (typeof date === 'string') {
-          return date;
-        }
-        return new Date(date).toISOString();
-      });
+      if (!parent.startDates) return [];
+      return parent.startDates.map((date: any) => 
+        date instanceof Date ? date.toISOString() : date
+      );
+    },
+    endDate: (parent: any) => {
+      if (!parent.endDate) return null;
+      return parent.endDate instanceof Date ? parent.endDate.toISOString() : parent.endDate;
     },
     createdAt: (parent: any) => {
-      if (parent.createdAt) {
-        return parent.createdAt.toISOString ? parent.createdAt.toISOString() : parent.createdAt;
+      if (!parent.createdAt) {
+        // If createdAt is missing, use current time
+        return new Date().toISOString();
       }
-      if (parent.startDates && parent.startDates.length > 0) {
-        const firstStartDate = parent.startDates[0];
-        return firstStartDate.toISOString ? firstStartDate.toISOString() : firstStartDate;
-      }
-      return new Date().toISOString();
+      return parent.createdAt instanceof Date ? parent.createdAt.toISOString() : parent.createdAt;
     },
     updatedAt: (parent: any) => {
-      if (parent.updatedAt) {
-        return parent.updatedAt.toISOString ? parent.updatedAt.toISOString() : parent.updatedAt;
+      if (!parent.updatedAt) {
+        // If updatedAt is missing, use current time
+        return new Date().toISOString();
       }
-      if (parent.startDates && parent.startDates.length > 0) {
-        const lastStartDate = parent.startDates[parent.startDates.length - 1];
-        return lastStartDate.toISOString ? lastStartDate.toISOString() : lastStartDate;
+      return parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : parent.updatedAt;
+    },
+    availableSpots: (parent: any) => {
+      return parent.availableSpots || parent.rosterLimit || 0;
+    },
+    isActive: (parent: any) => {
+      return parent.active !== undefined ? parent.active : true;
+    },
+    isPubliclyVisible: (parent: any) => {
+      return parent.active !== undefined ? parent.active : true;
+    },
+    images: (parent: any) => {
+      return parent.images || parent.image || [];
+    },
+    coverImage: (parent: any) => {
+      return parent.coverImage || (parent.image && parent.image.length > 0 ? parent.image[0] : null);
+    },
+    trainers: async (parent: any, _: unknown, { loaders }: AuthContext) => {
+      if (parent.trainers && Array.isArray(parent.trainers) && parent.trainers.length > 0) {
+        // If trainers are already populated as objects, return them
+        if (typeof parent.trainers[0] === 'object' && parent.trainers[0]._id) {
+          return parent.trainers;
+        }
+        // If trainers are IDs, use DataLoader to batch load them
+        if (typeof parent.trainers[0] === 'string') {
+          const trainers = await Promise.all(
+            parent.trainers.map((trainerId: string) => loaders.userLoader.load(trainerId))
+          );
+          return trainers.filter(Boolean); // Remove null values
+        }
       }
-      return new Date().toISOString();
+      return [];
+    },
+    trainer: async (parent: any, _: unknown, { loaders }: AuthContext) => {
+      if (parent.trainers && Array.isArray(parent.trainers) && parent.trainers.length > 0) {
+        let trainers;
+        
+        // If trainers are already populated as objects, use them
+        if (typeof parent.trainers[0] === 'object' && parent.trainers[0]._id) {
+          trainers = parent.trainers;
+        } 
+        // If trainers are IDs, use DataLoader to batch load them
+        else if (typeof parent.trainers[0] === 'string') {
+          trainers = await Promise.all(
+            parent.trainers.map((trainerId: string) => loaders.userLoader.load(trainerId))
+          );
+          trainers = trainers.filter(Boolean); // Remove null values
+        }
+        
+        if (trainers && trainers.length > 0) {
+          const firstTrainer = trainers.find((trainer: any) => {
+            if (trainer && trainer.name) {
+              return !trainer.name.toLowerCase().includes('admin') && 
+                     !trainer.name.toLowerCase().includes('test');
+            }
+            return false;
+          });
+          
+          if (firstTrainer && firstTrainer.name) {
+            return firstTrainer.name;
+          }
+        }
+      }
+      return parent.trainer || null;
     }
   },
 
   SessionSummary: {
-    endDate: (parent: any) => {
-      if (parent.endDate) {
-        return parent.endDate.toISOString ? parent.endDate.toISOString() : parent.endDate;
-      }
-      if (parent.startDates && parent.startDates.length > 0) {
-        const lastStartDate = parent.startDates[parent.startDates.length - 1];
-        return lastStartDate.toISOString ? lastStartDate.toISOString() : lastStartDate;
-      }
-      return new Date().toISOString();
-    },
     id: (parent: any) => parent._id || parent.id,
-    birthYear: (parent: any) => parent.birthYear || null,
-    images: (parent: any) => parent.image || [],
-    coverImage: (parent: any) => parent.image && parent.image.length > 0 ? parent.image[0] : null,
-    availableSpots: async (parent: any) => {
-      const bookingCount = await Booking.countDocuments({ session: parent._id });
-      return Math.max(0, parent.rosterLimit - bookingCount);
-    },
-    trainer: (parent: any) => {
-      if (parent.trainers && Array.isArray(parent.trainers) && parent.trainers.length > 0) {
-        const firstTrainer = parent.trainers.find((trainer: any) => {
-          if (typeof trainer === 'object' && trainer.name) {
-            return !trainer.name.toLowerCase().includes('admin') && 
-                   !trainer.name.toLowerCase().includes('test');
-          }
-          return false;
-        });
-        
-        if (firstTrainer && typeof firstTrainer === 'object' && firstTrainer.name) {
-          return firstTrainer.name;
-        }
-      }
-      return null;
+    ageRange: (parent: any) => {
+      if (!parent.ageRange) return null;
+      return {
+        minAge: parent.ageRange.minAge || 0,
+        maxAge: parent.ageRange.maxAge || 0
+      };
     },
     startDates: (parent: any) => {
-      if (!parent.startDates || !Array.isArray(parent.startDates)) {
-        return [];
-      }
-      return parent.startDates.map((date: any) => {
-        if (date instanceof Date) {
-          return date.toISOString();
-        }
-        if (typeof date === 'string') {
-          return date;
-        }
-        return new Date(date).toISOString();
-      });
+      if (!parent.startDates) return [];
+      return parent.startDates.map((date: any) => 
+        date instanceof Date ? date.toISOString() : date
+      );
+    },
+    endDate: (parent: any) => {
+      if (!parent.endDate) return null;
+      return parent.endDate instanceof Date ? parent.endDate.toISOString() : parent.endDate;
     },
     createdAt: (parent: any) => {
-      if (parent.createdAt) {
-        return parent.createdAt.toISOString ? parent.createdAt.toISOString() : parent.createdAt;
-      }
-      if (parent.startDates && parent.startDates.length > 0) {
-        const firstStartDate = parent.startDates[0];
-        return firstStartDate.toISOString ? firstStartDate.toISOString() : firstStartDate;
-      }
-      return new Date().toISOString();
+      if (!parent.createdAt) return null;
+      return parent.createdAt instanceof Date ? parent.createdAt.toISOString() : parent.createdAt;
     },
     updatedAt: (parent: any) => {
-      if (parent.updatedAt) {
-        return parent.updatedAt.toISOString ? parent.updatedAt.toISOString() : parent.updatedAt;
-      }
-      if (parent.startDates && parent.startDates.length > 0) {
-        const lastStartDate = parent.startDates[parent.startDates.length - 1];
-        return lastStartDate.toISOString ? lastStartDate.toISOString() : lastStartDate;
-      }
-      return new Date().toISOString();
+      if (!parent.updatedAt) return null;
+      return parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : parent.updatedAt;
+    },
+    availableSpots: (parent: any) => {
+      return parent.availableSpots || parent.rosterLimit || 0;
     }
   }
 }; 
