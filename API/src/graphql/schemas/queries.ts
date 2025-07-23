@@ -29,6 +29,37 @@ export const querySchema = gql`
     transactions: [Transaction!]!
     paymentMethods: [PaymentMethod!]!
     
+    # Admin billing queries
+    billingAnalytics(timeRange: String!): BillingAnalytics # Admin only
+    adminTransactions(
+      limit: Int
+      offset: Int
+      search: String
+      status: String
+      startDate: String
+      endDate: String
+    ): AdminTransactionConnection! # Admin only
+    adminCustomers(
+      limit: Int
+      offset: Int
+      search: String
+      status: String
+      riskLevel: String
+    ): AdminCustomerConnection! # Admin only
+    adminSubscriptions(
+      limit: Int
+      offset: Int
+      status: String
+      interval: String
+    ): AdminSubscriptionConnection! # Admin only
+    refundsDisputes(
+      limit: Int
+      offset: Int
+      type: String
+      status: String
+    ): RefundDisputeConnection! # Admin only
+    billingConfiguration: BillingConfiguration # Admin only
+    
     # New Session Template + Schedule Periods + Instances queries
     sessionTemplates(limit: Int = 10, offset: Int = 0): SessionTemplateConnection!
     sessionTemplate(id: ID!): SessionTemplate

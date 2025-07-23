@@ -252,6 +252,90 @@ export class StripeService {
       throw new Error('Invalid webhook signature');
     }
   }
+
+  /**
+   * Get payment intents for admin (with filters)
+   */
+  static async getPaymentIntents(params: any = {}) {
+    try {
+      const paymentIntents = await stripe.paymentIntents.list({
+        limit: params.limit || 50,
+        created: params.created,
+        customer: params.customer,
+        ...params
+      });
+
+      return paymentIntents;
+    } catch (error) {
+      console.error('Error retrieving payment intents:', error);
+      throw new Error('Failed to retrieve payment intents');
+    }
+  }
+
+  /**
+   * Get customers for admin
+   */
+  static async getCustomers(params: any = {}) {
+    try {
+      const customers = await stripe.customers.list({
+        limit: params.limit || 50,
+        email: params.search,
+        ...params
+      });
+
+      return customers;
+    } catch (error) {
+      console.error('Error retrieving customers:', error);
+      throw new Error('Failed to retrieve customers');
+    }
+  }
+
+  /**
+   * Get customer by ID
+   */
+  static async getCustomer(customerId: string) {
+    try {
+      const customer = await stripe.customers.retrieve(customerId);
+      return customer;
+    } catch (error) {
+      console.error('Error retrieving customer:', error);
+      throw new Error('Failed to retrieve customer');
+    }
+  }
+
+  /**
+   * Get invoices for a customer
+   */
+  static async getInvoices(customerId: string) {
+    try {
+      const invoices = await stripe.invoices.list({
+        customer: customerId,
+        limit: 10
+      });
+
+      return invoices;
+    } catch (error) {
+      console.error('Error retrieving invoices:', error);
+      throw new Error('Failed to retrieve invoices');
+    }
+  }
+
+  /**
+   * Get all invoices (admin)
+   */
+  static async getAllInvoices(params: any = {}) {
+    try {
+      const invoices = await stripe.invoices.list({
+        limit: params.limit || 50,
+        ...params
+      });
+
+      return invoices;
+    } catch (error) {
+      console.error('Error retrieving all invoices:', error);
+      throw new Error('Failed to retrieve invoices');
+    }
+  }
 }
 
 export default StripeService; 

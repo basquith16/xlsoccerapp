@@ -306,11 +306,11 @@ export const sessionResolvers = {
       return parent.endDate instanceof Date ? parent.endDate.toISOString() : parent.endDate;
     },
     createdAt: (parent: any) => {
-      if (!parent.createdAt) return null;
+      if (!parent.createdAt) return new Date().toISOString(); // Default to current time if missing
       return parent.createdAt instanceof Date ? parent.createdAt.toISOString() : parent.createdAt;
     },
     updatedAt: (parent: any) => {
-      if (!parent.updatedAt) return null;
+      if (!parent.updatedAt) return new Date().toISOString(); // Default to current time if missing
       return parent.updatedAt instanceof Date ? parent.updatedAt.toISOString() : parent.updatedAt;
     },
     availableSpots: (parent: any) => {

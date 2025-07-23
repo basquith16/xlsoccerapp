@@ -5,17 +5,19 @@ import User from '../../models/userModel';
 import Player from '../../models/playerModel';
 import { validateEmail, validatePassword, sanitizeInput, validateRequiredFields } from '../../utils/validation';
 import { IUser } from '../../types/models';
-import { setHttpOnlyCookie, clearCookie } from '../../utils/cookies';
 
 export const authResolvers = {
   Mutation: {
-    signup: async (_: unknown, { input }: { input: any }, context: any) => {
+    signup: async (_: unknown, { input }: { input: any }) => {
+      console.log('=== SIGNUP ATTEMPT ===');
+      console.log('Input received:', JSON.stringify(input, null, 2));
       
       const { name, email, password, passwordConfirm, birthday } = input;
       
       // Input validation
       const missingFields = validateRequiredFields(input, ['name', 'email', 'password', 'passwordConfirm', 'birthday']);
       if (missingFields.length > 0) {
+        console.log('Missing fields:', missingFields);
         return {
           status: 'error',
           message: 'All fields are required',
@@ -24,6 +26,7 @@ export const authResolvers = {
       }
 
       if (!validateEmail(email)) {
+        console.log('Invalid email format:', email);
         return {
           status: 'error',
           message: 'Invalid email format',
@@ -32,6 +35,7 @@ export const authResolvers = {
       }
 
       if (!validatePassword(password)) {
+        console.log('Weak password');
         return {
           status: 'error',
           message: 'Password must be at least 8 characters long',
@@ -40,6 +44,7 @@ export const authResolvers = {
       }
       
       if (password !== passwordConfirm) {
+        console.log('Passwords do not match');
         return {
           status: 'error',
           message: 'Passwords do not match',
@@ -50,6 +55,7 @@ export const authResolvers = {
       // Validate birthday
       const birthDate = new Date(birthday);
       if (isNaN(birthDate.getTime())) {
+        console.log('Invalid birthday format:', birthday);
         return {
           status: 'error',
           message: 'Invalid birthday format',
@@ -63,7 +69,10 @@ export const authResolvers = {
       const monthDiff = today.getMonth() - birthDate.getMonth();
       const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate()) ? age - 1 : age;
       
+      console.log('Age calculation:', { birthDate, actualAge });
+      
       if (actualAge < 13) {
+        console.log('User too young:', actualAge);
         return {
           status: 'error',
           message: 'You must be at least 13 years old to register',
@@ -74,10 +83,13 @@ export const authResolvers = {
       // Sanitize inputs
       const sanitizedName = sanitizeInput(name);
       const sanitizedEmail = email.toLowerCase().trim();
+      
+      console.log('Sanitized inputs:', { sanitizedName, sanitizedEmail });
 
       // Check if user already exists
       const existingUser = await User.findOne({ email: sanitizedEmail });
       if (existingUser) {
+        console.log('User already exists:', sanitizedEmail);
         return {
           status: 'error',
           message: 'User already exists',
@@ -85,20 +97,22 @@ export const authResolvers = {
         };
       }
 
+      console.log('Creating new user...');
+      
       // Create new user
       const user = new User({
         name: sanitizedName,
         email: sanitizedEmail,
         password,
         birthday: birthDate,
-        role: input.role || 'user',
-        active: input.active !== undefined ? input.active : true,
-        waiverSigned: input.waiverSigned !== undefined ? input.waiverSigned : false
+        role: 'user'
       });
 
       try {
         await user.save();
+        console.log('User saved successfully:', user._id);
       } catch (error) {
+        console.error('Error saving user:', error);
         return {
           status: 'error',
           message: 'Failed to create user',
@@ -106,12 +120,14 @@ export const authResolvers = {
         };
       }
 
+      console.log('Creating Player record...');
+      
       // Create a Player record for the user
       const player = new Player({
         name: sanitizedName,
         birthDate: birthDate,
         sex: 'male',
-        waiverSigned: input.waiverSigned !== undefined ? input.waiverSigned : false,
+        waiverSigned: false,
         isMinor: actualAge < 18,
         profImg: 'default.jpg',
         parent: user._id
@@ -119,10 +135,14 @@ export const authResolvers = {
 
       try {
         await player.save();
+        console.log('Player saved successfully:', player._id);
       } catch (error) {
-        // Player creation failed, but user was created - this is acceptable
+        console.error('Error saving player:', error);
+        console.log('Player creation failed, but user was created');
       }
 
+      console.log('Generating JWT token...');
+      
       // Generate JWT token
       const token = jwt.sign(
         { id: user._id },
@@ -130,20 +150,20 @@ export const authResolvers = {
         { expiresIn: '30d' }
       );
 
-      // Set httpOnly cookie
-      if (context.res) {
-        setHttpOnlyCookie(context.res, 'jwt', token);
-      }
+      console.log('Signup successful! Returning response...');
       
       return {
         status: 'success',
         message: 'User created successfully',
+        token,
         data: user
       };
     },
 
-    login: async (_: unknown, { input }: { input: any }, context: any) => {
+    login: async (_: unknown, { input }: { input: any }) => {
       const { email, password } = input;
+      
+      console.log('Login attempt for email:', email);
 
       // Input validation
       const missingFields = validateRequiredFields(input, ['email', 'password']);
@@ -157,12 +177,17 @@ export const authResolvers = {
 
       // Find user
       const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
+      console.log('User found:', user ? 'Yes' : 'No');
       if (!user) {
         throw new Error('Invalid credentials');
       }
 
+      console.log('User email in DB:', user.email);
+      console.log('Password field exists:', !!user.password);
+
       // Check password
       const isPasswordValid = await bcrypt.compare(password, user.password);
+      console.log('Password valid:', isPasswordValid);
       if (!isPasswordValid) {
         throw new Error('Invalid credentials');
       }
@@ -174,13 +199,11 @@ export const authResolvers = {
         { expiresIn: '30d' }
       );
 
-      // Set httpOnly cookie
-      if (context.res) {
-        setHttpOnlyCookie(context.res, 'jwt', token);
-      }
+      console.log('Login successful for user:', user.email);
 
       return {
         status: 'success',
+        token,
         data: user
       };
     },
@@ -222,8 +245,7 @@ export const authResolvers = {
 
         await user.save();
 
-        // Note: In production, send this token via email instead of logging
-        // TODO: Implement email service to send reset link
+        console.log('Password reset token:', resetToken);
 
         return {
           status: 'success',
@@ -312,18 +334,6 @@ export const authResolvers = {
           errors: [{ message: 'Failed to reset password', code: 'RESET_FAILED' }]
         };
       }
-    },
-
-    logout: async (_: unknown, __: any, context: any) => {
-      // Clear the httpOnly cookie
-      if (context.res) {
-        clearCookie(context.res, 'jwt');
-      }
-
-      return {
-        status: 'success',
-        message: 'Logged out successfully'
-      };
     }
   }
 }; 

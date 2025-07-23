@@ -32,6 +32,10 @@ export const mutationSchema = gql`
     detachPaymentMethod(input: DetachPaymentMethodInput!): String!
     setDefaultPaymentMethod(input: SetDefaultPaymentMethodInput!): Customer!
     
+    # Admin billing operations
+    generateFinancialReport(input: GenerateReportInput!): ReportGeneration! # Admin only
+    updateBillingConfiguration(input: UpdateBillingConfigInput!): BillingConfigUpdateResult! # Admin only
+    
     # Review operations
     createReview(input: CreateReviewInput!): Review!
     updateReview(id: ID!, review: String!, rating: Int!): Review!

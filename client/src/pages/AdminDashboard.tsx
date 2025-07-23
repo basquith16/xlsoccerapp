@@ -19,6 +19,7 @@ import SchedulePeriodManagement from '../components/admin/SchedulePeriodManageme
 import SessionInstanceManagement from '../components/admin/SessionInstanceManagement';
 import UserManagement from '../components/admin/users';
 import PlayerManagement from '../components/admin/players';
+import BillingManagement from '../components/admin/billing';
 
 interface AdminDashboardProps {}
 
@@ -67,12 +68,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
       case 'players':
         return <PlayerManagement />;
       case 'billing':
-        return (
-          <div className="text-center py-8">
-            <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Billing management coming soon...</p>
-          </div>
-        );
+        return <BillingManagement />;
       case 'analytics':
         return (
           <div className="text-center py-8">
@@ -110,7 +106,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
         {/* Sidebar */}
         <div className={`fixed top-[80px] left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:top-0 lg:inset-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        }`} style={{ height: 'calc(100vh - 80px - 32px)' }}>
+        }`} style={{ height: 'calc(100vh - 80px)' }}>
           <div className="flex flex-col h-full pt-4">
             {/* Sidebar header */}
             <div className="flex items-center justify-between h-12 px-6 border-b border-gray-200">
