@@ -85,10 +85,10 @@ export const billingResolvers = {
             netAmount: (payment.amount - (payment.application_fee_amount || 0)) / 100,
             refunded: payment.amount_refunded > 0,
             disputed: false, // Would need to check disputes separately
-            customer: customer ? {
+            customer: customer && !customer.deleted ? {
               id: customer.id,
-              name: customer.name || customer.email,
-              email: customer.email
+              name: (customer as any).name || (customer as any).email,
+              email: (customer as any).email
             } : null,
             paymentMethod: payment.payment_method ? {
               id: payment.payment_method,
@@ -146,12 +146,12 @@ export const billingResolvers = {
               totalSpent,
               lastPaymentDate: invoices?.data?.[0] ? new Date(invoices.data[0].created * 1000).toISOString() : null,
               subscriptionCount: 0, // Would need to fetch subscriptions
-              paymentMethodCount: paymentMethods?.data?.length || 0,
+              paymentMethodCount: paymentMethods?.length || 0,
               defaultPaymentMethodId: customer.invoice_settings?.default_payment_method,
               status: 'active',
               riskLevel: 'low'
             },
-            paymentMethods: paymentMethods?.data?.map((pm: any) => ({
+            paymentMethods: paymentMethods?.map((pm: any) => ({
               id: pm.id,
               type: pm.type,
               card: pm.card ? {

@@ -18,9 +18,9 @@ export const createApolloServer = () => {
     plugins: [
       {
         // Query validation plugin
-        requestDidStart() {
+        async requestDidStart() {
           return {
-            didResolveOperation({ request, document }) {
+            async didResolveOperation({ request, document }) {
               // Check query depth
               const depth = getQueryDepth(document);
               const maxDepth = 10; // Maximum allowed depth

@@ -291,19 +291,6 @@ export class StripeService {
   }
 
   /**
-   * Get customer by ID
-   */
-  static async getCustomer(customerId: string) {
-    try {
-      const customer = await stripe.customers.retrieve(customerId);
-      return customer;
-    } catch (error) {
-      console.error('Error retrieving customer:', error);
-      throw new Error('Failed to retrieve customer');
-    }
-  }
-
-  /**
    * Get invoices for a customer
    */
   static async getInvoices(customerId: string) {
