@@ -1,6 +1,17 @@
 import { gql } from 'graphql-tag';
 
 export const sessionSchema = gql`
+  enum FieldLocation {
+    Inside
+    Outside
+    TBD
+  }
+
+  type Field {
+    fieldNumb: String!
+    location: FieldLocation!
+  }
+
   type Session {
     id: ID!
     name: String!
@@ -25,6 +36,7 @@ export const sessionSchema = gql`
     slug: String!
     coverImage: String
     images: [String!]
+    field: Field
     createdAt: String!
     updatedAt: String!
   }
@@ -49,6 +61,7 @@ export const sessionSchema = gql`
     coverImage: String
     images: [String!]
     availableSpots: Int!
+    field: Field
     createdAt: String!
     updatedAt: String!
   }
@@ -62,6 +75,11 @@ export const sessionSchema = gql`
   type AgeRange {
     minAge: Int
     maxAge: Int
+  }
+
+  input FieldInput {
+    fieldNumb: String!
+    location: FieldLocation!
   }
 
   input CreateSessionInput {
@@ -82,6 +100,7 @@ export const sessionSchema = gql`
     staffOnly: Boolean!
     coverImage: String
     images: [String!]
+    field: FieldInput
   }
 
   input UpdateSessionInput {
@@ -102,5 +121,6 @@ export const sessionSchema = gql`
     staffOnly: Boolean
     coverImage: String
     images: [String!]
+    field: FieldInput
   }
 `; 

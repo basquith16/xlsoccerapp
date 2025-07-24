@@ -28,6 +28,10 @@ export interface ISession extends Document {
   description?: string;
   duration?: string;
   profileImages: string[];
+  field?: {
+    fieldNumb: string;
+    location: 'Inside' | 'Outside' | 'TBD';
+  };
 }
 
 // Mongoose Schema
@@ -136,6 +140,19 @@ const sessionSchema = new Schema({
       "elitecamp",
       "xlcamp"
     ]
+  },
+  field: {
+    fieldNumb: {
+      type: String,
+      required: false,
+      default: 'TBD'
+    },
+    location: {
+      type: String,
+      enum: ['Inside', 'Outside', 'TBD'],
+      required: false,
+      default: 'TBD'
+    }
   }
 }, {
   toJSON: { virtuals: true },

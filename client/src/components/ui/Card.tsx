@@ -18,7 +18,7 @@ const Card: React.FC<CardProps> = ({
   const baseClasses = 'bg-white rounded-lg';
   
   const variantClasses = {
-    default: 'shadow-md',
+    default: 'shadow-lg',
     elevated: 'shadow-xl',
     outlined: 'border border-gray-200',
   };

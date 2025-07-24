@@ -71,6 +71,10 @@ export interface Session {
   isPubliclyVisible?: boolean;
   description?: string;
   duration?: string;
+  field?: {
+    fieldNumb: string;
+    location: 'Inside' | 'Outside' | 'TBD';
+  };
   createdAt: string;
   updatedAt: string;
 }

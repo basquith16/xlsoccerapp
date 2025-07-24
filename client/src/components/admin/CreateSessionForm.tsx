@@ -35,7 +35,11 @@ const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
     trainer: '',
     staffOnly: false,
     coverImage: '',
-    images: ['']
+    images: [''],
+    field: {
+      fieldNumb: 'TBD',
+      location: 'TBD' as 'Inside' | 'Outside' | 'TBD'
+    }
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -128,6 +132,16 @@ const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
     if (field === 'name' && error && onErrorClear) {
       onErrorClear();
     }
+  };
+
+  const handleFieldChange = (fieldName: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      field: {
+        ...prev.field,
+        [fieldName]: value
+      }
+    }));
   };
 
   const addStartDate = () => {
@@ -429,6 +443,37 @@ const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
               }`}
             />
             {errors.timeEnd && <p className="text-red-500 text-sm mt-1">{errors.timeEnd}</p>}
+          </div>
+        </div>
+
+        {/* Field Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Field Number
+            </label>
+            <input
+              type="text"
+              value={formData.field.fieldNumb}
+              onChange={(e) => handleFieldChange('fieldNumb', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="e.g., 1, 2, A, B (or leave as TBD)"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Field Location
+            </label>
+            <select
+              value={formData.field.location}
+              onChange={(e) => handleFieldChange('location', e.target.value as 'Inside' | 'Outside' | 'TBD')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="TBD">To Be Determined</option>
+              <option value="Outside">Outside</option>
+              <option value="Inside">Inside</option>
+            </select>
           </div>
         </div>
 

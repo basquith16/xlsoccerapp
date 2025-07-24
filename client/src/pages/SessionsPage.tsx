@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, Filter, Calendar, Users, DollarSign, Clock, User } from 'lucide-react';
+import { Search, Filter, Calendar, Users, CreditCard, Clock, MapPin } from 'lucide-react';
 import { useSessions } from '../services/graphqlService';
 import { Session } from '../types';
 import Button from '../components/ui/Button';
@@ -69,14 +69,15 @@ const SessionsPage = () => {
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="py-6 px-8">
           <h1 className="text-3xl font-bold text-slate-900">Available Sessions</h1>
           <p className="mt-2 text-slate-600">Find the perfect session for your child</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
+      <div className="px-8 pt-6 pb-6 bg-gray-100">
+        {/* Filters */}
+        <Card className="mb-0">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
@@ -128,7 +129,9 @@ const SessionsPage = () => {
           </div>
         </div>
       </Card>
+      </div>
 
+      <div className="px-8 pt-6">
       {/* Sessions Grid */}
       {loading ? (
         <Loading size="lg" text="Loading sessions..." />
@@ -143,9 +146,9 @@ const SessionsPage = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
           {displayedSessions.map((session) => (
-            <Card key={session.id} padding="none" hover className="overflow-hidden">
+            <Card key={session.id} padding="none" hover className="overflow-hidden flex flex-col h-full">
               <div className="relative">
                 {session.images && session.images[0] ? (
                   <img
@@ -167,41 +170,54 @@ const SessionsPage = () => {
                   />
                 )}
                 <div className="absolute top-4 left-4">
-                  <span className="bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-medium">
+                  <span className="text-white px-2 py-1 rounded-full text-xs font-medium" style={{ backgroundColor: 'rgba(0,0,0,.6)' }}>
                     {session.sport}
                   </span>
                 </div>
               </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-slate-900 mb-2">{session.name}</h3>
-                <p className="text-slate-600 mb-4 line-clamp-2">{session.description}</p>
-                
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center text-sm text-slate-600">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    <span>
-                      {session.startDates && session.startDates.length > 0 
-                        ? session.startDates.map((date: string, index: number) => (
-                            <span key={index}>
-                              {new Date(date).toLocaleDateString()}
-                              {index < session.startDates.length - 1 ? ', ' : ''}
-                            </span>
-                          ))
-                        : 'TBD'
-                      }
-                    </span>
-                  </div>
-                  <div className="flex items-center text-sm text-slate-600">
-                    <Clock className="h-4 w-4 mr-2" />
-                    <span>{session.timeStart} - {session.timeEnd}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-slate-600">
-                    <Users className="h-4 w-4 mr-2" />
-                    <span>{session.demo}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-slate-600">
-                    <DollarSign className="h-4 w-4 mr-2" />
-                    <span>${session.price}</span>
+              <div className="p-6 flex flex-col flex-grow">
+                <div className="flex-grow">
+                  <h3 className="font-semibold text-slate-900 mb-2" style={{ fontSize: '1.2rem' }}>{session.name}</h3>
+                  <p className="text-slate-600 mb-4 line-clamp-2">{session.description}</p>
+                  
+                  <div className="mb-4" style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+                    <div className="flex items-center text-slate-600" style={{ fontSize: '1rem' }}>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span>
+                        {session.startDates && session.startDates.length > 0 
+                          ? session.startDates.map((date: string, index: number) => (
+                              <span key={index}>
+                                {new Date(date).toLocaleDateString()}
+                                {index < session.startDates.length - 1 ? ', ' : ''}
+                              </span>
+                            ))
+                          : 'TBD'
+                        }
+                      </span>
+                    </div>
+                    <div className="flex items-center text-slate-600" style={{ fontSize: '1rem' }}>
+                      <Clock className="h-4 w-4 mr-2" />
+                      <span>{session.timeStart} - {session.timeEnd}</span>
+                    </div>
+                    <div className="flex items-center text-slate-600" style={{ fontSize: '1rem' }}>
+                      <Users className="h-4 w-4 mr-2" />
+                      <span>{session.demo}</span>
+                    </div>
+                    <div className="flex items-center text-slate-600" style={{ fontSize: '1rem' }}>
+                      <CreditCard className="h-4 w-4 mr-2" />
+                      <span>${session.price}</span>
+                    </div>
+                    <div className="flex items-center text-slate-600" style={{ fontSize: '1rem' }}>
+                      <MapPin className="h-4 w-4 mr-2" />
+                      <span>
+                        {session.field && session.field.location !== 'TBD' && session.field.fieldNumb !== 'TBD' ? 
+                          `Location: ${session.field.location} Field ${session.field.fieldNumb}` : 
+                          session.field && (session.field.location === 'TBD' || session.field.fieldNumb === 'TBD') ?
+                          'TBD' :
+                          'Not specified'
+                        }
+                      </span>
+                    </div>
                   </div>
                 </div>
                 
@@ -213,24 +229,25 @@ const SessionsPage = () => {
               </div>
             </Card>
           ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      {/* Load More Button */}
-      {hasMoreSessions && (
-        <div className="text-center mt-8">
-          <Button onClick={handleLoadMore} variant="outline">
-            Load More Sessions
-          </Button>
-        </div>
-      )}
+        {/* Load More Button */}
+        {hasMoreSessions && (
+          <div className="text-center mt-8">
+            <Button onClick={handleLoadMore} variant="outline">
+              Load More Sessions
+            </Button>
+          </div>
+        )}
 
-      {/* No More Sessions Message */}
-      {!hasMoreSessions && filteredSessions.length > 0 && (
-        <div className="text-center mt-8 py-4">
-          <p className="text-slate-600">You've seen all available sessions!</p>
-        </div>
-      )}
+        {/* No More Sessions Message */}
+        {!hasMoreSessions && filteredSessions.length > 0 && (
+          <div className="text-center mt-8 py-4">
+            <p className="text-slate-600">You've seen all available sessions!</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

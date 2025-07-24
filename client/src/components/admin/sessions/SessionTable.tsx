@@ -35,6 +35,9 @@ const SessionTable: React.FC<SessionTableProps> = React.memo(({
                 Capacity
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Field
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -58,6 +61,14 @@ const SessionTable: React.FC<SessionTableProps> = React.memo(({
                 </td>
                 <td className="px-6 whitespace-nowrap text-gray-900" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem', fontSize: '1.2rem' }}>
                   {session.rosterLimit} players
+                </td>
+                <td className="px-6 whitespace-nowrap text-gray-900" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem', fontSize: '1.2rem' }}>
+                  {session.field && session.field.location !== 'TBD' && session.field.fieldNumb !== 'TBD' ? 
+                    `Location: ${session.field.location} Field ${session.field.fieldNumb}` : 
+                    session.field && (session.field.location === 'TBD' || session.field.fieldNumb === 'TBD') ?
+                    'To Be Determined' :
+                    'Not specified'
+                  }
                 </td>
                 <td className="px-6 whitespace-nowrap" style={{ paddingTop: '0.8rem', paddingBottom: '0.8rem' }}>
                   <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
