@@ -22,7 +22,6 @@ interface RevenueAnalyticsProps {}
 
 const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y'>('30d');
-  const [viewType, setViewType] = useState<'overview' | 'detailed'>('overview');
   const { isDemoMode } = useDemoMode();
 
   // Fetch real data from GraphQL
@@ -123,7 +122,7 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
             <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value as any)}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="border border-gray-300 rounded-md pl-3 pr-10 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
             >
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
@@ -132,32 +131,16 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
             </select>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={viewType === 'overview' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setViewType('overview')}
-          >
-            Overview
-          </Button>
-          <Button
-            variant={viewType === 'detailed' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setViewType('detailed')}
-          >
-            Detailed
-          </Button>
-        </div>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-4 gap-6">
         <Card>
           <div className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   {formatCurrency(metrics.totalRevenue.value)}
                 </p>
               </div>
@@ -174,10 +157,10 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
 
         <Card>
           <div className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Transactions</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   {metrics.transactions.value.toLocaleString()}
                 </p>
               </div>
@@ -194,10 +177,10 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
 
         <Card>
           <div className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Active Customers</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   {metrics.activeCustomers.value}
                 </p>
               </div>
@@ -214,10 +197,10 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
 
         <Card>
           <div className="p-6">
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Average Order</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-2xl font-bold text-gray-900 mt-1">
                   {formatCurrency(metrics.averageOrder.value)}
                 </p>
               </div>

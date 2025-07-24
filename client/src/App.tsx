@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.tsx';
+import { DemoModeProvider } from './contexts/DemoModeContext';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -25,7 +26,9 @@ const App: React.FC = () => {
               path="/admin/*" 
               element={
                 <ProtectedRoute>
-                  <AdminDashboard />
+                  <DemoModeProvider>
+                    <AdminDashboard />
+                  </DemoModeProvider>
                 </ProtectedRoute>
               } 
             />

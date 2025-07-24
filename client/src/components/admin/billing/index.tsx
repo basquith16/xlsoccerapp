@@ -97,32 +97,34 @@ const BillingManagementContent: React.FC<BillingManagementProps> = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Billing Management</h2>
-          <p className="text-gray-600">Enterprise billing operations and financial oversight</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">Billing Management</h2>
+          <p className="text-sm md:text-base text-gray-600">Enterprise billing operations and financial oversight</p>
         </div>
         <div className="flex items-center space-x-3">
-          <Card className="px-4 py-2">
+          <Card className="px-3 md:px-4 py-2">
             <div className="flex items-center space-x-2">
               <CreditCard className="h-4 w-4 text-green-600" />
-              <span className="text-sm font-medium text-gray-900">Stripe Connected</span>
+              <span className="text-xs md:text-sm font-medium text-gray-900">Stripe Connected</span>
             </div>
           </Card>
           <Button
             onClick={toggleDemoMode}
             variant="outline"
-            className={`flex items-center ${isDemoMode ? 'bg-orange-50 border-orange-300 text-orange-700' : ''}`}
+            className={`flex items-center text-xs md:text-sm px-3 md:px-4 ${isDemoMode ? 'bg-orange-50 border-orange-300 text-orange-700' : ''}`}
           >
             {isDemoMode ? (
               <>
-                <Eye className="h-4 w-4 mr-2" />
-                Demo Mode On
+                <Eye className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden sm:inline">Demo Mode</span>
+                <span className="sm:hidden">Demo</span>
               </>
             ) : (
               <>
-                <Database className="h-4 w-4 mr-2" />
-                Live Data
+                <Database className="h-4 w-4 mr-1 md:mr-2" />
+                <span className="hidden sm:inline">Live Data</span>
+                <span className="sm:hidden">Live</span>
               </>
             )}
           </Button>

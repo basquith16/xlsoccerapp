@@ -140,10 +140,10 @@ const SessionTemplateManagement: React.FC<SessionTemplateManagementProps> = () =
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center space-y-4 md:space-y-0">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Session Template Management</h2>
-          <p className="text-gray-600">Create, edit, and manage session templates</p>
+          <h2 className="text-xl md:text-2xl font-bold text-gray-900">Session Template Management</h2>
+          <p className="text-sm md:text-base text-gray-600">Create, edit, and manage session templates</p>
         </div>
         <TemplateActions onCreateTemplate={handleCreateTemplate} />
       </div>

@@ -13,13 +13,11 @@ import Card from '../components/ui/Card';
 import Error from '../components/ui/Error';
 import Header from '../components/layout/Header';
 import Footer from '../components/layout/Footer';
-import SessionsManagement from '../components/admin/SessionsManagement';
-import SessionTemplateManagement from '../components/admin/SessionTemplateManagement';
-import SchedulePeriodManagement from '../components/admin/SchedulePeriodManagement';
-import SessionInstanceManagement from '../components/admin/SessionInstanceManagement';
+import SessionsManagement from '../components/admin/sessions';
 import UserManagement from '../components/admin/users';
 import PlayerManagement from '../components/admin/players';
 import BillingManagement from '../components/admin/billing';
+import Analytics from '../components/admin/analytics';
 
 interface AdminDashboardProps {}
 
@@ -42,13 +40,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
   }
 
   const navigationItems = [
-    { id: 'sessions', label: 'Sessions', icon: Calendar, description: 'Manage soccer sessions' },
-    { id: 'templates', label: 'Templates', icon: Calendar, description: 'Manage session templates' },
-    { id: 'periods', label: 'Periods', icon: Calendar, description: 'Manage schedule periods' },
-    { id: 'instances', label: 'Instances', icon: Calendar, description: 'Manage session instances' },
+    { id: 'sessions', label: 'Sessions', icon: Calendar, description: 'Manage sessions, templates, and schedules' },
+    { id: 'billing', label: 'Billing', icon: CreditCard, description: 'Financial operations and analytics' },
     { id: 'users', label: 'Users', icon: Users, description: 'Manage user accounts' },
     { id: 'players', label: 'Players', icon: Users, description: 'Manage player profiles' },
-    { id: 'billing', label: 'Billing', icon: CreditCard, description: 'View financial records' },
     { id: 'analytics', label: 'Analytics', icon: BarChart3, description: 'View performance metrics' },
     { id: 'settings', label: 'Settings', icon: Settings, description: 'Configure system settings' }
   ];
@@ -57,25 +52,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = () => {
     switch (activeSection) {
       case 'sessions':
         return <SessionsManagement />;
-      case 'templates':
-        return <SessionTemplateManagement />;
-      case 'periods':
-        return <SchedulePeriodManagement />;
-      case 'instances':
-        return <SessionInstanceManagement />;
+      case 'billing':
+        return <BillingManagement />;
       case 'users':
         return <UserManagement />;
       case 'players':
         return <PlayerManagement />;
-      case 'billing':
-        return <BillingManagement />;
       case 'analytics':
-        return (
-          <div className="text-center py-8">
-            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">Analytics dashboard coming soon...</p>
-          </div>
-        );
+        return <Analytics />;
       case 'settings':
         return (
           <div className="text-center py-8">

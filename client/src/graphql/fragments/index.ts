@@ -55,6 +55,10 @@ export const SESSION_FIELDS = gql`
     images
     availableSpots
     rosterLimit
+    field {
+      fieldNumb
+      location
+    }
     createdAt
     updatedAt
   }
@@ -106,6 +110,10 @@ export const SESSION_ADMIN_FIELDS = gql`
     images
     availableSpots
     rosterLimit
+    field {
+      fieldNumb
+      location
+    }
     createdAt
     updatedAt
   }

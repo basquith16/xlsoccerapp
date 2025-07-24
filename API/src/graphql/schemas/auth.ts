@@ -33,6 +33,18 @@ export const authSchema = gql`
     profImg: String
   }
 
+  type PlayerConnection {
+    nodes: [Player!]!
+    totalCount: Int!
+    hasNextPage: Boolean!
+  }
+
+  type UserConnection {
+    nodes: [User!]!
+    totalCount: Int!
+    hasNextPage: Boolean!
+  }
+
   type Error {
     message: String!
     code: String!
@@ -51,6 +63,11 @@ export const authSchema = gql`
     status: String!
     message: String!
     errors: [Error!]
+  }
+
+  type LogoutResponse {
+    status: String!
+    message: String!
   }
 
   input CreateUserInput {
@@ -77,5 +94,23 @@ export const authSchema = gql`
     birthDate: String!
     sex: String!
     isMinor: Boolean!
+  }
+
+  input CreatePlayerInput {
+    name: String!
+    birthDate: String!
+    sex: String!
+    parentId: ID!
+    waiverSigned: Boolean
+    profImg: String
+  }
+
+  input UpdatePlayerInput {
+    name: String
+    birthDate: String
+    sex: String
+    parentId: ID
+    waiverSigned: Boolean
+    profImg: String
   }
 `; 
