@@ -1,7 +1,7 @@
 import { gql } from 'graphql-tag';
 
 export const querySchema = gql`
-  type Query {
+  extend type Query {
     # Public queries
     sessions(limit: Int = 10, offset: Int = 0): SessionConnection!
     session(id: ID!): Session

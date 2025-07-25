@@ -1,7 +1,7 @@
 import { gql } from 'graphql-tag';
 
 export const mutationSchema = gql`
-  type Mutation {
+  extend type Mutation {
     # Authentication
     signup(input: CreateUserInput!): AuthResponse!
     login(input: LoginInput!): AuthResponse!

@@ -463,9 +463,13 @@ export const billingResolvers = {
         return {
           id: paymentIntent.id,
           status: paymentIntent.status,
-          customer: paymentIntent.customer?.id || paymentIntent.customer,
+          customer: typeof paymentIntent.customer === 'object' && paymentIntent.customer?.id 
+            ? paymentIntent.customer.id 
+            : paymentIntent.customer as string,
           amount: paymentIntent.amount,
-          paymentMethod: paymentIntent.payment_method?.id || paymentIntent.payment_method,
+          paymentMethod: typeof paymentIntent.payment_method === 'object' && paymentIntent.payment_method?.id
+            ? paymentIntent.payment_method.id
+            : paymentIntent.payment_method as string,
           setupFutureUsage: paymentIntent.setup_future_usage,
         };
       } catch (error) {

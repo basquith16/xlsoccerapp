@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import { DemoModeProvider } from './contexts/DemoModeContext';
+import { initializeBlocks } from './components/admin/pages/blocks';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
@@ -11,11 +12,19 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import SessionsPage from './pages/SessionsPage';
 import SessionDetailPage from './pages/SessionDetailPage';
 import AccountPage from './pages/AccountPage';
-import AdminDashboard from './pages/AdminDashboard';
+import PublicPage from './pages/PublicPage';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
+// Lazy load admin components (heavy dependencies)
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+
 const App: React.FC = () => {
+  // Initialize blocks globally on app start
+  useEffect(() => {
+    initializeBlocks();
+  }, []);
+  
   return (
     <ErrorBoundary>
       <AuthProvider>
@@ -27,7 +36,13 @@ const App: React.FC = () => {
               element={
                 <ProtectedRoute>
                   <DemoModeProvider>
-                    <AdminDashboard />
+                    <Suspense fallback={
+                      <div className="flex items-center justify-center min-h-screen">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      </div>
+                    }>
+                      <AdminDashboard />
+                    </Suspense>
                   </DemoModeProvider>
                 </ProtectedRoute>
               } 
@@ -52,6 +67,11 @@ const App: React.FC = () => {
                       </ProtectedRoute>
                     } 
                   />
+                  {/* Static content pages with clean URLs */}
+                  <Route path="/about" element={<PublicPage slug="about" />} />
+                  <Route path="/contact" element={<PublicPage slug="contact" />} />
+                  <Route path="/pricing" element={<PublicPage slug="pricing" />} />
+                  <Route path="/rentals" element={<PublicPage slug="rentals" />} />
                 </Routes>
               </Layout>
             } />
