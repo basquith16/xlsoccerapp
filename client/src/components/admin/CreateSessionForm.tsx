@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { SportType, DemoType } from '../../types';
 import { useQuery } from '@apollo/client';
 import { GET_ADMIN_COACHES } from '../../graphql/queries/admin';
+import { isDateInPast } from '../../utils/dateUtils';
 
 interface CreateSessionFormProps {
   onSubmit: (data: any) => void;
@@ -89,8 +90,21 @@ const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
       newErrors.startDates = 'At least one start date is required';
     }
 
+    // Validate start dates are not in the past
+    if (formData.startDates.length > 0) {
+      const pastStartDates = formData.startDates.filter(date => date && isDateInPast(date));
+      if (pastStartDates.length > 0) {
+        newErrors.startDates = 'Start dates cannot be in the past';
+      }
+    }
+
     if (!formData.endDate) {
       newErrors.endDate = 'End date is required';
+    }
+
+    // Validate end date is not in the past
+    if (formData.endDate && isDateInPast(formData.endDate)) {
+      newErrors.endDate = 'End date cannot be in the past';
     }
 
     if (!formData.timeStart) {

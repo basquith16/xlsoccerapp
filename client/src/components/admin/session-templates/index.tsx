@@ -9,6 +9,7 @@ import TemplateActions from './TemplateActions';
 import TemplateFilters from './TemplateFilters';
 import TemplateTable from './TemplateTable';
 import TemplatePagination from './TemplatePagination';
+import SessionTemplateViewModal from './SessionTemplateViewModal';
 import { useAdminSessionTemplates, useCreateSessionTemplate, useUpdateSessionTemplate, useDeleteSessionTemplate } from '../../../services/graphqlService';
 
 interface SessionTemplateManagementProps {}
@@ -18,6 +19,7 @@ const SessionTemplateManagement: React.FC<SessionTemplateManagementProps> = () =
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterSport, setFilterSport] = useState('all');
@@ -79,8 +81,8 @@ const SessionTemplateManagement: React.FC<SessionTemplateManagementProps> = () =
   };
 
   const handleViewTemplate = (template: any) => {
-    // Navigate to template detail page (future feature)
-    console.log('View template:', template.name);
+    setSelectedTemplate(template);
+    setShowViewModal(true);
   };
 
   const handleCreateSubmit = async (formData: any) => {
@@ -241,6 +243,13 @@ const SessionTemplateManagement: React.FC<SessionTemplateManagementProps> = () =
           </div>
         </div>
       </Modal>
+
+      {/* View Template Modal */}
+      <SessionTemplateViewModal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        template={selectedTemplate}
+      />
     </div>
   );
 };

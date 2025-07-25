@@ -16,5 +16,8 @@ export * from './graphql/templates';
 // User hooks
 export * from './graphql/users';
 
+// Analytics hooks (using existing resolvers only)
+// export * from './graphql/analytics';
+
 // Utility functions
 export * from './graphql/utils'; 

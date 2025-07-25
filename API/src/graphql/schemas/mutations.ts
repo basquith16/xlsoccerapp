@@ -27,6 +27,7 @@ export const mutationSchema = gql`
     
     # Payment operations
     createPaymentIntent(input: CreatePaymentIntentInput!): PaymentIntent!
+    verifyPaymentIntent(input: VerifyPaymentIntentInput!): PaymentIntentVerification!
     createSetupIntent(input: CreateSetupIntentInput!): SetupIntent!
     attachPaymentMethod(input: AttachPaymentMethodInput!): PaymentMethod!
     detachPaymentMethod(input: DetachPaymentMethodInput!): String!

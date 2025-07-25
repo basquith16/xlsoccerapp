@@ -4,6 +4,7 @@ import Player from '../../models/playerModel';
 import { validateObjectId } from '../../utils/validation';
 import { IUser } from '../../types/models';
 import { AuthContext } from '../../types/context';
+import StripeService from '../../services/stripeService';
 
 export const bookingResolvers = {
   Query: {
@@ -75,6 +76,36 @@ export const bookingResolvers = {
 
       if (existingBooking) {
         throw new Error('You already have a booking for this session');
+      }
+
+      // Create or get Stripe customer for analytics tracking
+      try {
+        await StripeService.getOrCreateCustomer(
+          user._id.toString(),
+          user.email,
+          user.name
+        );
+        console.log(`Stripe customer created/retrieved for user: ${user.email}`);
+      } catch (error) {
+        console.error('Error creating Stripe customer:', error);
+        // Don't fail the booking if Stripe customer creation fails
+        // This ensures booking still works even if Stripe is down
+      }
+
+      // Verify if recent payments are properly associated with customer
+      // This is for debugging the customer association issue
+      try {
+        const recentPayments = await StripeService.getPaymentIntents({ 
+          customer: await StripeService.getOrCreateCustomer(user._id.toString(), user.email, user.name).then(c => c.id),
+          limit: 1 
+        });
+        console.log(`🔍 Recent payments for customer:`, recentPayments.data.length);
+        if (recentPayments.data.length > 0) {
+          const latestPayment = recentPayments.data[0];
+          console.log(`🔍 Latest payment: ${latestPayment.id}, customer: ${latestPayment.customer}, status: ${latestPayment.status}`);
+        }
+      } catch (error) {
+        console.log('Could not verify recent payments:', error);
       }
 
       const booking = new Booking({

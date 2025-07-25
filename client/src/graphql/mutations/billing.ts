@@ -12,6 +12,19 @@ export const CREATE_PAYMENT_INTENT = gql`
   }
 `;
 
+export const VERIFY_PAYMENT_INTENT = gql`
+  mutation VerifyPaymentIntent($input: VerifyPaymentIntentInput!) {
+    verifyPaymentIntent(input: $input) {
+      id
+      status
+      customer
+      amount
+      paymentMethod
+      setupFutureUsage
+    }
+  }
+`;
+
 export const CREATE_SETUP_INTENT = gql`
   mutation CreateSetupIntent($input: CreateSetupIntentInput!) {
     createSetupIntent(input: $input) {

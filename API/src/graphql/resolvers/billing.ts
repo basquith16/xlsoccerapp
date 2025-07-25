@@ -1,5 +1,10 @@
 import StripeService from '../../services/stripeService';
 import { IUser } from '../../types/models';
+import { validateObjectId } from '../../utils/validation';
+import Session from '../../models/sessionModel';
+import Booking from '../../models/bookingModel';
+
+console.log('🔥 BILLING RESOLVER LOADED WITH createPaymentIntent');
 
 export const billingResolvers = {
   Query: {
@@ -10,15 +15,38 @@ export const billingResolvers = {
       }
 
       try {
+        console.log(`🔍 Fetching billing analytics for timeRange: ${timeRange}`);
+        
         // Get all payment intents for the specified time range
         const payments = await StripeService.getPaymentIntents({ 
           created: { gte: Math.floor(Date.now() / 1000) - (timeRange === '30d' ? 30 * 24 * 3600 : 7 * 24 * 3600) } 
         });
 
+        console.log(`🔍 Found ${payments.data.length} total payments in time range`);
+        
         const successfulPayments = payments.data.filter(p => p.status === 'succeeded');
+        console.log(`🔍 Found ${successfulPayments.length} successful payments`);
+        
         const totalRevenue = successfulPayments.reduce((sum, p) => sum + p.amount, 0) / 100;
         const totalTransactions = successfulPayments.length;
-        const activeCustomers = new Set(successfulPayments.map(p => p.customer)).size;
+        
+        // Fix customer counting - handle both string IDs and expanded customer objects
+        const customerIds = successfulPayments
+          .map(p => {
+            // Handle both expanded customer objects and plain customer ID strings
+            if (typeof p.customer === 'string') {
+              return p.customer;
+            } else if (p.customer && typeof p.customer === 'object' && p.customer.id) {
+              return p.customer.id;
+            }
+            return null;
+          })
+          .filter(customerId => customerId && customerId !== null);
+        const activeCustomers = new Set(customerIds).size;
+        
+        console.log(`🔍 Customer IDs found: ${customerIds.length}, Unique customers: ${activeCustomers}`);
+        console.log(`🔍 Sample customer IDs:`, customerIds.slice(0, 3));
+        
         const averageOrderValue = totalRevenue / totalTransactions || 0;
 
         // Calculate revenue by month (simplified for demo)
@@ -72,7 +100,8 @@ export const billingResolvers = {
         const payments = await StripeService.getPaymentIntents(queryParams);
         
         const nodes = await Promise.all(payments.data.map(async (payment: any) => {
-          const customer = payment.customer ? await StripeService.getCustomer(payment.customer) : null;
+          // Since we're expanding customer data, payment.customer is already the full object
+          const customer = payment.customer && !payment.customer.deleted ? payment.customer : null;
           
           return {
             id: payment.id,
@@ -352,6 +381,99 @@ export const billingResolvers = {
   },
 
   Mutation: {
+    createPaymentIntent: async (_: unknown, { input }: { input: any }, { user }: { user: IUser | null }) => {
+      console.log('=== BILLING RESOLVER createPaymentIntent CALLED ===');
+      console.log('Input:', JSON.stringify(input, null, 2));
+      console.log('User:', user?.email);
+      
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { sessionId, price } = input;
+
+      // Validate input - using the same validation as the working version
+      if (!validateObjectId(sessionId)) {
+        throw new Error('Invalid session ID format');
+      }
+
+      if (!price || price <= 0) {
+        throw new Error('Invalid price');
+      }
+
+      // Check if session exists
+      const session = await Session.findById(sessionId);
+      if (!session) {
+        throw new Error('Session not found');
+      }
+
+      // Check if user already has a booking for this session
+      const existingBooking = await Booking.findOne({
+        user: user._id,
+        session: sessionId
+      });
+
+      if (existingBooking) {
+        throw new Error('You already have a booking for this session');
+      }
+
+      // Convert price to cents for Stripe
+      const amountInCents = Math.round(price * 100);
+
+      // Create or get Stripe customer for better analytics and payment tracking
+      const customer = await StripeService.getOrCreateCustomer(
+        user._id.toString(),
+        user.email,
+        user.name
+      );
+      console.log(`Stripe customer for payment: ${customer.id} (${user.email})`);
+
+      // Create payment intent using the exact same format as the working version
+      const paymentIntent = await StripeService.createPaymentIntent({
+        amount: amountInCents,
+        currency: 'usd',
+        customerId: customer.id,
+        metadata: {
+          sessionId,
+          userId: user._id.toString(),
+          sessionName: session.name,
+          customerId: customer.id,
+        },
+        customerEmail: user.email,
+      });
+
+      console.log('🔄 Returning payment intent to frontend:', JSON.stringify(paymentIntent, null, 2));
+      return paymentIntent;
+    },
+
+    verifyPaymentIntent: async (_: unknown, { input }: { input: any }, { user }: { user: IUser | null }) => {
+      if (!user) {
+        throw new Error('Not authenticated');
+      }
+
+      const { paymentIntentId } = input;
+      if (!paymentIntentId) {
+        throw new Error('Payment Intent ID is required');
+      }
+
+      try {
+        console.log(`🔍 Verifying PaymentIntent ${paymentIntentId} for user ${user.email}`);
+        const paymentIntent = await StripeService.getPaymentIntent(paymentIntentId);
+        
+        return {
+          id: paymentIntent.id,
+          status: paymentIntent.status,
+          customer: paymentIntent.customer?.id || paymentIntent.customer,
+          amount: paymentIntent.amount,
+          paymentMethod: paymentIntent.payment_method?.id || paymentIntent.payment_method,
+          setupFutureUsage: paymentIntent.setup_future_usage,
+        };
+      } catch (error) {
+        console.error('Error verifying payment intent:', error);
+        throw new Error('Failed to verify payment intent');
+      }
+    },
+
     createSetupIntent: async (_: unknown, { input }: { input: any }, { user }: { user: IUser | null }) => {
       if (!user) {
         throw new Error('Not authenticated');

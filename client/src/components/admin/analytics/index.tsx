@@ -1,8 +1,12 @@
 import React, { useState } from 'react';
 import { BarChart3, TrendingUp, Users, DollarSign, Calendar, Activity } from 'lucide-react';
 import { useDemoMode } from '../../../contexts/DemoModeContext';
+import { useQuery } from '@apollo/client';
+import { GET_BILLING_ANALYTICS } from '../../../graphql/queries/adminBilling';
+import { GET_USERS } from '../../../graphql/queries/auth';
+import { GET_ADMIN_SESSION_INSTANCES } from '../../../graphql/queries/sessionInstances';
 import Card from '../../ui/Card';
-import RevenueChart from './RevenueChart';
+import RevenueAnalytics from '../billing/RevenueAnalytics';
 import CustomerAnalytics from './CustomerAnalytics';
 import OperationalMetrics from './OperationalMetrics';
 import BusinessIntelligence from './BusinessIntelligence';
@@ -25,7 +29,7 @@ const Analytics: React.FC = () => {
       case 'overview':
         return <AnalyticsOverview />;
       case 'revenue':
-        return <RevenueChart />;
+        return <RevenueAnalytics />;
       case 'customers':
         return <CustomerAnalytics />;
       case 'operations':
@@ -100,33 +104,61 @@ const Analytics: React.FC = () => {
 const AnalyticsOverview: React.FC = () => {
   const { isDemoMode } = useDemoMode();
   
+  // Fetch real data for overview KPIs
+  const { data: billingData } = useQuery(GET_BILLING_ANALYTICS, {
+    variables: { timeRange: '30d' },
+    skip: isDemoMode,
+    errorPolicy: 'all'
+  });
+  
+  const { data: usersData } = useQuery(GET_USERS, {
+    variables: { limit: 1000 },
+    skip: isDemoMode,
+    errorPolicy: 'all'
+  });
+  
+  const { data: instancesData } = useQuery(GET_ADMIN_SESSION_INSTANCES, {
+    variables: { limit: 500 },
+    skip: isDemoMode,
+    errorPolicy: 'all'
+  });
+  
+  // Calculate real metrics or use demo data
+  const billing = billingData?.billingAnalytics;
+  const users = usersData?.users?.nodes || [];
+  const instances = instancesData?.adminSessionInstances?.nodes || [];
+  
+  const totalBookings = instances.reduce((sum, instance) => sum + (instance.bookedCount || 0), 0);
+  const totalRevenue = billing?.totalRevenue || 0;
+  const avgSessionValue = totalBookings > 0 ? totalRevenue / totalBookings : 0;
+  
   const kpis = [
     {
       title: 'Total Revenue',
-      value: isDemoMode ? '$52,430' : '$28,920',
-      change: isDemoMode ? '+12.5%' : '+8.3%',
-      trend: 'up',
+      value: isDemoMode ? '$52,430' : `$${Math.round(totalRevenue).toLocaleString()}`,
+      change: isDemoMode ? '+12.5%' : `${billing?.revenueChange > 0 ? '+' : ''}${Math.round(billing?.revenueChange || 0)}%`,
+      trend: isDemoMode ? 'up' : (billing?.revenueChange || 0) >= 0 ? 'up' : 'down',
       icon: DollarSign,
     },
     {
       title: 'Active Customers',
-      value: isDemoMode ? '1,247' : '892',
-      change: isDemoMode ? '+5.8%' : '+3.2%',
-      trend: 'up',
+      value: isDemoMode ? '1,247' : (billing?.activeCustomers || 0).toLocaleString(),
+      change: isDemoMode ? '+5.8%' : `${billing?.customerChange > 0 ? '+' : ''}${Math.round(billing?.customerChange || 0)}%`,
+      trend: isDemoMode ? 'up' : (billing?.customerChange || 0) >= 0 ? 'up' : 'down',
       icon: Users,
     },
     {
       title: 'Session Bookings',
-      value: isDemoMode ? '3,891' : '2,156',
-      change: isDemoMode ? '+18.2%' : '+14.7%',
-      trend: 'up',
+      value: isDemoMode ? '3,891' : totalBookings.toLocaleString(),
+      change: isDemoMode ? '+18.2%' : `${billing?.transactionChange > 0 ? '+' : ''}${Math.round(billing?.transactionChange || 0)}%`,
+      trend: isDemoMode ? 'up' : (billing?.transactionChange || 0) >= 0 ? 'up' : 'down',
       icon: Calendar,
     },
     {
       title: 'Avg Session Value',
-      value: isDemoMode ? '$47.30' : '$41.80',
-      change: isDemoMode ? '+2.1%' : '-1.4%',
-      trend: isDemoMode ? 'up' : 'down',
+      value: isDemoMode ? '$47.30' : `$${Math.round(avgSessionValue)}`,
+      change: isDemoMode ? '+2.1%' : `${billing?.averageOrderChange > 0 ? '+' : ''}${Math.round(billing?.averageOrderChange || 0)}%`,
+      trend: isDemoMode ? 'up' : (billing?.averageOrderChange || 0) >= 0 ? 'up' : 'down',
       icon: BarChart3,
     },
   ];
@@ -160,13 +192,247 @@ const AnalyticsOverview: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue Trend (30 days)</h3>
-          <RevenueChart />
+          <RevenuePreviewChart isDemoMode={isDemoMode} billingData={billing} />
         </Card>
         
         <Card>
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Customer Growth</h3>
-          <CustomerAnalytics />
+          <CustomerPreviewChart isDemoMode={isDemoMode} usersData={users} billingData={billing} />
         </Card>
+      </div>
+    </div>
+  );
+};
+
+// Revenue Preview Chart Component
+const RevenuePreviewChart: React.FC<{ isDemoMode: boolean; billingData: any }> = ({ isDemoMode, billingData }) => {
+  if (isDemoMode) {
+    // Show demo revenue trend bars
+    const demoData = [
+      { day: 'Mon', revenue: 1200 },
+      { day: 'Tue', revenue: 1800 },
+      { day: 'Wed', revenue: 1500 },
+      { day: 'Thu', revenue: 2200 },
+      { day: 'Fri', revenue: 2800 },
+      { day: 'Sat', revenue: 3200 },
+      { day: 'Sun', revenue: 2100 }
+    ];
+    
+    const maxRevenue = Math.max(...demoData.map(d => d.revenue));
+    
+    return (
+      <div className="h-48 flex items-end justify-between space-x-2 px-4 pb-4">
+        {demoData.map((data, index) => (
+          <div key={index} className="flex flex-col items-center flex-1">
+            <div 
+              className="w-full bg-blue-500 rounded-t-sm transition-all duration-300 hover:bg-blue-600"
+              style={{ 
+                height: `${(data.revenue / maxRevenue) * 140}px`,
+                minHeight: '8px'
+              }}
+            />
+            <span className="text-xs text-gray-600 mt-2">{data.day}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Show real revenue data if available
+  if (billingData?.revenueByMonth) {
+    const revenueData = billingData.revenueByMonth.slice(-7); // Last 7 data points
+    const maxRevenue = Math.max(...revenueData.map((d: any) => d.revenue));
+    
+    return (
+      <div className="h-48 flex items-end justify-between space-x-2 px-4 pb-4">
+        {revenueData.map((data: any, index: number) => (
+          <div key={index} className="flex flex-col items-center flex-1">
+            <div 
+              className="w-full bg-green-500 rounded-t-sm transition-all duration-300 hover:bg-green-600"
+              style={{ 
+                height: `${maxRevenue > 0 ? (data.revenue / maxRevenue) * 140 : 8}px`,
+                minHeight: '8px'
+              }}
+            />
+            <span className="text-xs text-gray-600 mt-2">
+              {(() => {
+                // Handle different date formats
+                try {
+                  if (typeof data.month === 'string') {
+                    // If it's already a month name, use it directly
+                    if (data.month.length <= 3) return data.month;
+                    // Try to parse as date
+                    const date = new Date(data.month);
+                    if (!isNaN(date.getTime())) {
+                      return date.toLocaleDateString('en-US', { month: 'short' });
+                    }
+                    // If parsing fails, extract first 3 chars
+                    return data.month.substring(0, 3);
+                  }
+                  return `M${index + 1}`;
+                } catch (error) {
+                  return `M${index + 1}`;
+                }
+              })()}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Fallback when no data
+  return (
+    <div className="h-48 flex items-center justify-center text-gray-500">
+      <div className="text-center">
+        <BarChart3 className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+        <p className="text-sm">No revenue data available</p>
+      </div>
+    </div>
+  );
+};
+
+// Customer Preview Chart Component
+const CustomerPreviewChart: React.FC<{ isDemoMode: boolean; usersData: any[]; billingData?: any }> = ({ isDemoMode, usersData, billingData }) => {
+  if (isDemoMode) {
+    // Show demo customer growth line
+    const demoData = [
+      { week: 'W1', customers: 850 },
+      { week: 'W2', customers: 920 },
+      { week: 'W3', customers: 1050 },
+      { week: 'W4', customers: 1180 },
+      { week: 'W5', customers: 1250 }
+    ];
+    
+    const maxCustomers = Math.max(...demoData.map(d => d.customers));
+    const minCustomers = Math.min(...demoData.map(d => d.customers));
+    
+    return (
+      <div className="h-48 relative px-4 py-4">
+        <svg className="w-full h-full">
+          {demoData.map((data, index) => {
+            const x = (index / (demoData.length - 1)) * 100;
+            const y = 100 - ((data.customers - minCustomers) / (maxCustomers - minCustomers)) * 80;
+            
+            return (
+              <g key={index}>
+                <circle
+                  cx={`${x}%`}
+                  cy={`${y}%`}
+                  r="4"
+                  fill="#10b981"
+                  className="hover:r-6 transition-all duration-200"
+                />
+                {index < demoData.length - 1 && (
+                  <line
+                    x1={`${x}%`}
+                    y1={`${y}%`}
+                    x2={`${(index + 1) / (demoData.length - 1) * 100}%`}
+                    y2={`${100 - ((demoData[index + 1].customers - minCustomers) / (maxCustomers - minCustomers)) * 80}%`}
+                    stroke="#10b981"
+                    strokeWidth="2"
+                  />
+                )}
+              </g>
+            );
+          })}
+        </svg>
+        <div className="absolute bottom-0 left-0 right-0 flex justify-between px-4 text-xs text-gray-600">
+          {demoData.map((data, index) => (
+            <span key={index}>{data.week}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Show real customer growth if available - use billing data or user data
+  if ((billingData?.activeCustomers && billingData.activeCustomers > 0) || (usersData && usersData.length > 0)) {
+    // If we only have billing data, show a simple representation
+    if (billingData?.activeCustomers && (!usersData || usersData.length === 0)) {
+      // Show active customers as a single metric with trend
+      const activeCustomers = billingData.activeCustomers;
+      return (
+        <div className="h-48 flex items-center justify-center">
+          <div className="text-center">
+            <div className="text-4xl font-bold text-green-600">{activeCustomers}</div>
+            <div className="text-sm text-gray-600 mt-2">Active Customers</div>
+            {billingData.customerChange && (
+              <div className={`text-sm mt-2 font-medium ${billingData.customerChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {billingData.customerChange >= 0 ? '+' : ''}{billingData.customerChange.toFixed(1)}% vs last period
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    
+    // Group users by week for the last 5 weeks if we have user data
+    const now = new Date();
+    const weeklyData = [];
+    
+    for (let i = 4; i >= 0; i--) {
+      const weekStart = new Date(now.getTime() - (i * 7 * 24 * 60 * 60 * 1000));
+      const weekEnd = new Date(weekStart.getTime() + (7 * 24 * 60 * 60 * 1000));
+      
+      const weekCustomers = usersData.filter(user => {
+        const userDate = new Date(user.createdAt);
+        return userDate >= weekStart && userDate < weekEnd;
+      }).length;
+      
+      weeklyData.push({
+        week: `W${5-i}`,
+        customers: weekCustomers
+      });
+    }
+    
+    const maxCustomers = Math.max(...weeklyData.map(d => d.customers), 1);
+    
+    return (
+      <div className="h-48 relative px-4 py-4">
+        <svg className="w-full h-full">
+          {weeklyData.map((data, index) => {
+            const x = (index / (weeklyData.length - 1)) * 100;
+            const y = 100 - (data.customers / maxCustomers) * 80;
+            
+            return (
+              <g key={index}>
+                <circle
+                  cx={`${x}%`}
+                  cy={`${y}%`}
+                  r="4"
+                  fill="#3b82f6"
+                  className="hover:r-6 transition-all duration-200"
+                />
+                {index < weeklyData.length - 1 && (
+                  <line
+                    x1={`${x}%`}
+                    y1={`${y}%`}
+                    x2={`${(index + 1) / (weeklyData.length - 1) * 100}%`}
+                    y2={`${100 - (weeklyData[index + 1].customers / maxCustomers) * 80}%`}
+                    stroke="#3b82f6"
+                    strokeWidth="2"
+                  />
+                )}
+              </g>
+            );
+          })}
+        </svg>
+        <div className="absolute bottom-0 left-0 right-0 flex justify-between px-4 text-xs text-gray-600">
+          {weeklyData.map((data, index) => (
+            <span key={index}>{data.week}</span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Fallback when no data
+  return (
+    <div className="h-48 flex items-center justify-center text-gray-500">
+      <div className="text-center">
+        <Users className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+        <p className="text-sm">No customer data available</p>
       </div>
     </div>
   );

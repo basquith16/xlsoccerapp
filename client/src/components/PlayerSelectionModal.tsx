@@ -43,12 +43,37 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
     
     // Calculate player's current age from birth date
     const today = new Date();
-    const birthDate = new Date(member.birthDate);
-    let playerAge = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
-      playerAge--;
+    let birthDate;
+    let playerAge = NaN;
+    
+    // Handle different date formats
+    if (member.birthDate) {
+      // Check if it's a Unix timestamp (string of numbers)
+      if (typeof member.birthDate === 'string' && /^\d+$/.test(member.birthDate)) {
+        // Convert string timestamp to number
+        birthDate = new Date(parseInt(member.birthDate));
+      } else {
+        // Try parsing as regular date string
+        birthDate = new Date(member.birthDate);
+      }
+      
+      // Check if date parsing was successful
+      if (!isNaN(birthDate.getTime())) {
+        playerAge = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+          playerAge--;
+        }
+      }
     }
+    
+    console.log('Date parsing debug:', {
+      playerName: member.name,
+      rawBirthDate: member.birthDate,
+      parsedBirthDate: birthDate,
+      isValidDate: birthDate && !isNaN(birthDate.getTime()),
+      calculatedAge: playerAge
+    });
     
     // Check if player's age falls within the session's age range
     const ageMatch = isPlayerEligibleForAgeRange(playerAge, session.ageRange);
@@ -87,8 +112,25 @@ const PlayerSelectionModal: React.FC<PlayerSelectionModalProps> = ({
   };
 
   const getAge = (birthDate: string) => {
+    if (!birthDate) return 'Unknown';
+    
     const today = new Date();
-    const birth = new Date(birthDate);
+    let birth;
+    
+    // Check if it's a Unix timestamp (string of numbers)
+    if (typeof birthDate === 'string' && /^\d+$/.test(birthDate)) {
+      // Convert string timestamp to number
+      birth = new Date(parseInt(birthDate));
+    } else {
+      // Try parsing as regular date string
+      birth = new Date(birthDate);
+    }
+    
+    // Check if date parsing was successful
+    if (isNaN(birth.getTime())) {
+      return 'Invalid Date';
+    }
+    
     let age = today.getFullYear() - birth.getFullYear();
     const monthDiff = today.getMonth() - birth.getMonth();
     

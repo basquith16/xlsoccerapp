@@ -14,6 +14,7 @@ export interface CreatePaymentIntentParams {
   currency: string;
   metadata?: Record<string, string>;
   customerEmail?: string;
+  customerId?: string;
 }
 
 export class StripeService {
@@ -22,7 +23,7 @@ export class StripeService {
    */
   static async createPaymentIntent(params: CreatePaymentIntentParams) {
     try {
-      const paymentIntent = await stripe.paymentIntents.create({
+      const paymentIntentParams: any = {
         amount: params.amount,
         currency: params.currency || 'usd',
         metadata: params.metadata,
@@ -30,7 +31,20 @@ export class StripeService {
         automatic_payment_methods: {
           enabled: true,
         },
-      });
+      };
+
+      // Associate with customer if provided for better analytics
+      if (params.customerId) {
+        paymentIntentParams.customer = params.customerId;
+        // This tells Stripe to save the payment method to the customer
+        paymentIntentParams.setup_future_usage = 'on_session';
+        console.log(`Creating payment intent for customer: ${params.customerId}`);
+      }
+
+      console.log('Stripe PaymentIntent params:', JSON.stringify(paymentIntentParams, null, 2));
+      const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
+      console.log(`Created PaymentIntent: ${paymentIntent.id} for customer: ${paymentIntent.customer}`);
+
 
       return {
         id: paymentIntent.id,
@@ -214,7 +228,16 @@ export class StripeService {
    */
   static async getPaymentIntent(paymentIntentId: string) {
     try {
-      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+      const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+        expand: ['customer', 'payment_method']
+      });
+      console.log(`🔍 Retrieved PaymentIntent ${paymentIntentId}:`, {
+        id: paymentIntent.id,
+        status: paymentIntent.status,
+        customer: paymentIntent.customer,
+        payment_method: paymentIntent.payment_method,
+        setup_future_usage: paymentIntent.setup_future_usage
+      });
       return paymentIntent;
     } catch (error) {
       console.error('Error retrieving payment intent:', error);
@@ -262,8 +285,14 @@ export class StripeService {
         limit: params.limit || 50,
         created: params.created,
         customer: params.customer,
+        expand: ['data.customer'], // Expand customer data
         ...params
       });
+
+      console.log(`🔍 StripeService.getPaymentIntents retrieved ${paymentIntents.data.length} payment intents`);
+      if (paymentIntents.data.length > 0) {
+        console.log(`🔍 Sample payment intent customer:`, paymentIntents.data[0].customer);
+      }
 
       return paymentIntents;
     } catch (error) {

@@ -9,6 +9,7 @@ import InstanceActions from './InstanceActions';
 import InstanceFilters from './InstanceFilters';
 import InstanceTable from './InstanceTable';
 import InstancePagination from './InstancePagination';
+import SessionInstanceViewModal from './SessionInstanceViewModal';
 import { useAdminSessionInstances, useCreateSessionInstance, useUpdateSessionInstance, useDeleteSessionInstance, useAdminSessionTemplates, useAdminSchedulePeriods, useGenerateInstancesFromPeriod } from '../../../services/graphqlService';
 
 interface SessionInstanceManagementProps {}
@@ -19,6 +20,7 @@ const SessionInstanceManagement: React.FC<SessionInstanceManagementProps> = () =
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedInstance, setSelectedInstance] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTemplate, setFilterTemplate] = useState('all');
@@ -96,8 +98,8 @@ const SessionInstanceManagement: React.FC<SessionInstanceManagementProps> = () =
   };
 
   const handleViewInstance = (instance: any) => {
-    // Navigate to instance detail page (future feature)
-    console.log('View instance:', instance.name);
+    setSelectedInstance(instance);
+    setShowViewModal(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -293,6 +295,13 @@ const SessionInstanceManagement: React.FC<SessionInstanceManagementProps> = () =
         onSubmit={handleGenerateInstancesSubmit}
         periods={periods}
         isLoading={generating}
+      />
+
+      {/* View Instance Modal */}
+      <SessionInstanceViewModal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        instance={selectedInstance}
       />
     </div>
   );

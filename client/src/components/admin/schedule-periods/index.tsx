@@ -9,6 +9,7 @@ import PeriodActions from './PeriodActions';
 import PeriodFilters from './PeriodFilters';
 import PeriodTable from './PeriodTable';
 import PeriodPagination from './PeriodPagination';
+import SchedulePeriodViewModal from './SchedulePeriodViewModal';
 import { useAdminSchedulePeriods, useCreateSchedulePeriod, useUpdateSchedulePeriod, useDeleteSchedulePeriod, useAdminSessionTemplates } from '../../../services/graphqlService';
 
 interface SchedulePeriodManagementProps {}
@@ -18,6 +19,7 @@ const SchedulePeriodManagement: React.FC<SchedulePeriodManagementProps> = () => 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterTemplate, setFilterTemplate] = useState('all');
@@ -76,8 +78,8 @@ const SchedulePeriodManagement: React.FC<SchedulePeriodManagementProps> = () => 
   };
 
   const handleViewPeriod = (period: any) => {
-    // Navigate to period detail page (future feature)
-    console.log('View period:', period.name);
+    setSelectedPeriod(period);
+    setShowViewModal(true);
   };
 
   const handleConfirmDelete = async () => {
@@ -234,6 +236,13 @@ const SchedulePeriodManagement: React.FC<SchedulePeriodManagementProps> = () => 
           </div>
         </div>
       </Modal>
+
+      {/* View Period Modal */}
+      <SchedulePeriodViewModal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        period={selectedPeriod}
+      />
     </div>
   );
 };

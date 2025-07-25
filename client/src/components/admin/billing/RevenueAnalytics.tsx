@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery } from '@apollo/client';
 import { 
   TrendingUp, 
@@ -16,6 +16,7 @@ import Card from '../../ui/Card';
 import Button from '../../ui/Button';
 import { useDemoMode } from '../../../contexts/DemoModeContext';
 import { GET_BILLING_ANALYTICS } from '../../../graphql/queries/adminBilling';
+import { GET_ADMIN_SESSIONS } from '../../../graphql/queries/sessions';
 import { demoData } from '../../../services/demoData/billingDemoData';
 
 interface RevenueAnalyticsProps {}
@@ -25,14 +26,35 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
   const { isDemoMode } = useDemoMode();
 
   // Fetch real data from GraphQL
-  const { data: analyticsData, loading, error } = useQuery(GET_BILLING_ANALYTICS, {
+  const { data: analyticsData, loading, error, refetch } = useQuery(GET_BILLING_ANALYTICS, {
     variables: { timeRange },
     skip: isDemoMode, // Skip query when in demo mode
-    fetchPolicy: 'cache-and-network'
+    fetchPolicy: 'network-only' // Force fresh data
+  });
+  
+  // Fetch session data for enhanced insights
+  const { data: sessionData, loading: sessionLoading } = useQuery(GET_ADMIN_SESSIONS, {
+    variables: { limit: 500 },
+    skip: isDemoMode,
+    errorPolicy: 'all'
   });
 
   // Use demo data or real data based on mode
   const analytics = isDemoMode ? demoData.analytics : analyticsData?.billingAnalytics;
+  
+  // Debug logging and refetch on mount
+  useEffect(() => {
+    if (!isDemoMode && refetch) {
+      console.log('📊 Refetching billing analytics...');
+      refetch();
+    }
+  }, [isDemoMode, refetch]);
+  
+  // Debug logging
+  if (!isDemoMode && analyticsData) {
+    console.log('📊 Billing Analytics Data:', analyticsData);
+    console.log('📊 Active Customers:', analyticsData?.billingAnalytics?.activeCustomers);
+  }
   
   
   // Fallback metrics structure
@@ -66,7 +88,17 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
 
   const revenueData = analytics?.monthlyRevenue || analytics?.revenueByMonth || [];
   const paymentMethods = analytics?.paymentMethodBreakdown || [];
-  const topSessions = analytics?.topSessions || [];
+  
+  // Enhanced top sessions with real session data
+  const topSessions = !isDemoMode && sessionData?.adminSessions?.nodes 
+    ? sessionData.adminSessions.nodes.slice(0, 10).map(session => ({
+        name: session.name,
+        revenue: session.price * (session.bookedCount || 0),
+        bookings: session.bookedCount || 0,
+        sport: session.sport || 'General',
+        utilizationRate: session.rosterLimit > 0 ? Math.round(((session.bookedCount || 0) / session.rosterLimit) * 100) : 0
+      }))
+    : analytics?.topSessions || [];
 
   // Show loading state
   if (!isDemoMode && loading) {
@@ -298,10 +330,16 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
                     Session Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sport
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Revenue
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Bookings
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Utilization
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Avg per Booking
@@ -322,6 +360,11 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 capitalize">
+                        {session.sport || 'General'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
                         {formatCurrency(session.revenue)}
                       </div>
@@ -331,13 +374,18 @@ const RevenueAnalytics: React.FC<RevenueAnalyticsProps> = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {formatCurrency(session.revenue / session.bookings)}
+                        {session.utilizationRate ? `${Math.round(session.utilizationRate)}%` : 'N/A'}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {formatCurrency(session.bookings > 0 ? session.revenue / session.bookings : 0)}
                       </div>
                     </td>
                   </tr>
                 )) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-4 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
                       <p className="text-sm">No session data available</p>
                     </td>
                   </tr>

@@ -76,24 +76,9 @@ export const sessionResolvers = {
         
         // Parse ageRange string into object if provided
         if (input.ageRange) {
-          const ageRangeMatch = input.ageRange.match(/(\d+)-(\d+)/);
-          if (ageRangeMatch) {
-            input.ageRange = {
-              minAge: parseInt(ageRangeMatch[1]),
-              maxAge: parseInt(ageRangeMatch[2])
-            };
-          } else {
-            // If no match, try to parse as single age
-            const singleAge = parseInt(input.ageRange);
-            if (!isNaN(singleAge)) {
-              input.ageRange = {
-                minAge: singleAge,
-                maxAge: singleAge
-              };
-            } else {
-              throw new Error('Invalid age range format. Use format like "8-12" or "10"');
-            }
-          }
+          // Use the existing parseAgeRange utility function
+          const { parseAgeRange } = require('../../utils/ageValidation');
+          input.ageRange = parseAgeRange(input.ageRange);
         } else {
           // Set default ageRange if not provided
           input.ageRange = {
@@ -191,11 +176,14 @@ export const sessionResolvers = {
       // If ageRange is null/undefined, return null (GraphQL will handle this)
       if (!parent.ageRange) return null;
       
-      // Ensure minAge and maxAge are numbers, defaulting to 0 if undefined
-      return {
-        minAge: typeof parent.ageRange.minAge === 'number' ? parent.ageRange.minAge : 0,
-        maxAge: typeof parent.ageRange.maxAge === 'number' ? parent.ageRange.maxAge : 0
-      };
+      // Handle corrupted data where minAge/maxAge might be invalid
+      const minAge = typeof parent.ageRange.minAge === 'number' ? parent.ageRange.minAge : 0;
+      const maxAge = typeof parent.ageRange.maxAge === 'number' ? parent.ageRange.maxAge : 0;
+      
+      // If both are 0 (default/corrupted state), return null to show "All ages"
+      if (minAge === 0 && maxAge === 0) return null;
+      
+      return { minAge, maxAge };
     },
     startDates: (parent: any) => {
       if (!parent.startDates) return [];

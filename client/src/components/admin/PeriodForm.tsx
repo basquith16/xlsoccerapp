@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { SchedulePeriod, SessionTemplate } from '../../types';
+import { isDateInPast } from '../../utils/dateUtils';
 import PeriodFormHeader from './forms/PeriodFormHeader';
 import PeriodFormTemplateSelection from './forms/PeriodFormTemplateSelection';
 import PeriodFormBasicInfo from './forms/PeriodFormBasicInfo';
@@ -73,6 +74,16 @@ const PeriodForm: React.FC<PeriodFormProps> = ({
 
     if (!formData.endDate) {
       newErrors.endDate = 'End date is required';
+    }
+
+    // Validate start date is not in the past
+    if (formData.startDate && isDateInPast(formData.startDate)) {
+      newErrors.startDate = 'Start date cannot be in the past';
+    }
+
+    // Validate end date is not in the past
+    if (formData.endDate && isDateInPast(formData.endDate)) {
+      newErrors.endDate = 'End date cannot be in the past';
     }
 
     if (formData.startDate && formData.endDate) {

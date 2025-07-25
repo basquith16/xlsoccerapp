@@ -70,6 +70,19 @@ export const billingSchema = gql`
     price: Float!
   }
 
+  input VerifyPaymentIntentInput {
+    paymentIntentId: String!
+  }
+
+  type PaymentIntentVerification {
+    id: String!
+    status: String!
+    customer: String
+    amount: Int!
+    paymentMethod: String
+    setupFutureUsage: String
+  }
+
   input CreateSetupIntentInput {
     returnUrl: String
   }

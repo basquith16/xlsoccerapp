@@ -3,6 +3,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { useMutation } from '@apollo/client';
 import { CREATE_PAYMENT_INTENT, CREATE_BOOKING } from '../graphql/mutations';
+import { VERIFY_PAYMENT_INTENT } from '../graphql/mutations/billing';
 import Button from './ui/Button';
 import { CreditCard, Lock, Shield } from 'lucide-react';
 
@@ -53,6 +54,7 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({
 
   const [createPaymentIntent] = useMutation(CREATE_PAYMENT_INTENT);
   const [createBooking] = useMutation(CREATE_BOOKING);
+  const [verifyPaymentIntent] = useMutation(VERIFY_PAYMENT_INTENT);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -104,9 +106,12 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({
       }
 
       const { clientSecret } = paymentData.createPaymentIntent;
+      console.log('🔍 Full payment intent response:', JSON.stringify(paymentData.createPaymentIntent, null, 2));
+      console.log('🔍 Client secret received:', clientSecret);
 
       // Step 2: Confirm payment with Stripe Elements
-      const { error: paymentError } = await stripe.confirmCardPayment(clientSecret, {
+      // Use confirmCardPayment since we're using CardElement
+      const { error: paymentError, paymentIntent: confirmedPaymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: elements.getElement(CardElement)!,
           billing_details: {
@@ -116,7 +121,37 @@ const CheckoutForm: React.FC<PaymentFormProps> = ({
       });
 
       if (paymentError) {
+        console.error('❌ Payment error:', paymentError);
         throw new Error(paymentError.message || 'Payment failed');
+      }
+
+      console.log('✅ Payment confirmed successfully!');
+      console.log('🔍 Full confirmed PaymentIntent:', JSON.stringify(confirmedPaymentIntent, null, 2));
+      console.log('📊 PaymentIntent ID:', confirmedPaymentIntent?.id);
+      console.log('👤 Customer from confirmed PI:', confirmedPaymentIntent?.customer);
+      console.log('💳 Payment Method:', confirmedPaymentIntent?.payment_method);
+
+      // Backend verification: Check if payment is properly associated with customer
+      if (confirmedPaymentIntent?.id) {
+        console.log('🔍 Verifying payment-customer association on backend...');
+        try {
+          const { data: verificationData } = await verifyPaymentIntent({
+            variables: {
+              input: {
+                paymentIntentId: confirmedPaymentIntent.id
+              }
+            }
+          });
+          
+          console.log('✅ Backend verification result:', JSON.stringify(verificationData.verifyPaymentIntent, null, 2));
+          if (verificationData.verifyPaymentIntent.customer) {
+            console.log('🎉 SUCCESS: Payment properly associated with customer:', verificationData.verifyPaymentIntent.customer);
+          } else {
+            console.log('❌ ISSUE: No customer association found on backend');
+          }
+        } catch (error) {
+          console.error('❌ Backend verification failed:', error);
+        }
       }
 
       // Step 3: Create booking

@@ -19,11 +19,32 @@ const InstanceTable: React.FC<InstanceTableProps> = ({
     return new Date(dateString).toLocaleDateString();
   };
 
-  const formatTime = (dateString: string) => {
-    return new Date(`2000-01-01T${dateString}`).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+  const formatTime = (timeString: string) => {
+    if (!timeString || timeString === 'Invalid Date') return 'Time TBD';
+    
+    // Handle different time formats
+    try {
+      // If it's already a time string like "14:30"
+      if (timeString.includes(':') && !timeString.includes('T')) {
+        return new Date(`2000-01-01T${timeString}`).toLocaleTimeString([], { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+      }
+      
+      // If it's a full date/time string
+      const date = new Date(timeString);
+      if (isNaN(date.getTime())) {
+        return 'Time TBD';
+      }
+      
+      return date.toLocaleTimeString([], { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (error) {
+      return 'Time TBD';
+    }
   };
 
   const getStatusBadge = (instance: any) => {
@@ -101,23 +122,24 @@ const InstanceTable: React.FC<InstanceTableProps> = ({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div className="max-w-xs">
-                      <div className="text-xs">
-                        <span className="font-medium">Template:</span> {instance.template?.name}
+                      <div className="text-sm font-medium truncate">
+                        {instance.templateInfo?.name || instance.template?.name || 'No Template'}
                       </div>
                     </div>
-                    
-                    {instance.period && (
-                      <div className="mt-2 text-xs text-gray-500">
-                        <span className="font-medium">Period:</span> {instance.period.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div className="max-w-xs">
+                      <div className="text-sm font-medium truncate">
+                        {instance.periodInfo?.name || instance.period?.name || 'No Period'}
                       </div>
-                    )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <div>
                       <div className="font-medium">{formatDate(instance.date)}</div>
                       <div className="text-gray-500">
                         <Clock className="inline h-3 w-3 mr-1" />
-                        {formatTime(instance.date)}
+                        {formatTime(instance.startTime)} - {formatTime(instance.endTime)}
                       </div>
                     </div>
                   </td>

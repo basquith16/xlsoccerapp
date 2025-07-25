@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SessionInstance, SessionTemplate, SchedulePeriod } from '../../types';
 import { useAdminSessionTemplates, useAdminSchedulePeriods, useAdminCoaches } from '../../services/graphqlService';
+import { isDateInPast } from '../../utils/dateUtils';
 import InstanceFormHeader from './forms/InstanceFormHeader';
 import InstanceFormFields from './forms/InstanceFormFields';
 import InstanceFormActions from './forms/InstanceFormActions';
@@ -84,6 +85,11 @@ const InstanceForm: React.FC<InstanceFormProps> = ({
 
     if (!formData.date) {
       newErrors.date = 'Date is required';
+    }
+
+    // Validate date is not in the past
+    if (formData.date && isDateInPast(formData.date)) {
+      newErrors.date = 'Instance date cannot be in the past';
     }
 
     if (!formData.startTime) {
