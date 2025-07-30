@@ -1,18 +1,79 @@
 import SchedulePeriod from '../../models/schedulePeriodModel';
 import User from '../../models/userModel';
 import { validateObjectId } from '../../utils/validation';
+// Helper function to convert Mongoose documents to plain objects with string IDs
+const convertToPlainObject = (doc) => {
+    if (!doc)
+        return doc;
+    const plain = doc.toObject ? doc.toObject() : doc;
+    // Convert ObjectIds to strings
+    if (plain._id) {
+        plain.id = plain._id.toString();
+        delete plain._id;
+    }
+    // Convert Date objects to ISO strings
+    if (plain.startDate) {
+        plain.startDate = new Date(plain.startDate).toISOString();
+    }
+    if (plain.endDate) {
+        plain.endDate = new Date(plain.endDate).toISOString();
+    }
+    if (plain.createdAt) {
+        plain.createdAt = new Date(plain.createdAt).toISOString();
+    }
+    if (plain.updatedAt) {
+        plain.updatedAt = new Date(plain.updatedAt).toISOString();
+    }
+    // Map templateInfo to template field for GraphQL
+    if (plain.templateInfo) {
+        plain.template = plain.templateInfo;
+        delete plain.templateInfo;
+    }
+    else {
+        // If templateInfo is null/undefined, provide a default template object
+        plain.template = {
+            id: plain.template || 'unknown',
+            name: 'Unknown Template',
+            sport: 'Unknown',
+            demo: 'Unknown'
+        };
+    }
+    // Handle coaches array - ensure all coaches have required fields
+    if (plain.coaches && Array.isArray(plain.coaches)) {
+        plain.coaches = plain.coaches.map((coach) => {
+            if (!coach)
+                return null;
+            const coachObj = typeof coach === 'object' ? coach : { id: coach };
+            // Ensure coach has required fields
+            return {
+                id: coachObj.id || coachObj._id?.toString() || 'unknown',
+                name: coachObj.name || 'Unknown Coach',
+                email: coachObj.email || 'unknown@example.com',
+                role: coachObj.role || 'coach'
+            };
+        }).filter(Boolean); // Remove null entries
+    }
+    else {
+        plain.coaches = [];
+    }
+    return plain;
+};
+const convertArrayToPlainObjects = (docs) => {
+    return docs.map(convertToPlainObject);
+};
 export const periodResolvers = {
     Query: {
         schedulePeriods: async (_, { limit = 10, offset = 0 }) => {
             const periods = await SchedulePeriod.find({ isActive: true })
                 .populate('templateInfo')
                 .populate('instances')
+                .populate('coaches')
                 .limit(limit)
                 .skip(offset);
             const totalCount = await SchedulePeriod.countDocuments({ isActive: true });
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: periods,
+                nodes: convertArrayToPlainObjects(periods),
                 totalCount,
                 hasNextPage
             };
@@ -23,11 +84,12 @@ export const periodResolvers = {
             }
             const period = await SchedulePeriod.findById(id)
                 .populate('templateInfo')
-                .populate('instances');
+                .populate('instances')
+                .populate('coaches');
             if (!period) {
                 throw new Error('Schedule period not found');
             }
-            return period;
+            return convertToPlainObject(period);
         },
         schedulePeriodsByTemplate: async (_, { templateId, limit = 10, offset = 0 }) => {
             if (!validateObjectId(templateId)) {
@@ -36,12 +98,13 @@ export const periodResolvers = {
             const periods = await SchedulePeriod.find({ template: templateId, isActive: true })
                 .populate('templateInfo')
                 .populate('instances')
+                .populate('coaches')
                 .limit(limit)
                 .skip(offset);
             const totalCount = await SchedulePeriod.countDocuments({ template: templateId, isActive: true });
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: periods,
+                nodes: convertArrayToPlainObjects(periods),
                 totalCount,
                 hasNextPage
             };
@@ -53,12 +116,13 @@ export const periodResolvers = {
             const periods = await SchedulePeriod.find({})
                 .populate('templateInfo')
                 .populate('instances')
+                .populate('coaches')
                 .limit(limit)
                 .skip(offset);
             const totalCount = await SchedulePeriod.countDocuments({});
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: periods,
+                nodes: convertArrayToPlainObjects(periods),
                 totalCount,
                 hasNextPage
             };
@@ -74,7 +138,7 @@ export const periodResolvers = {
                         { email: 'tbd@system.local' }
                     ]
                 }).sort({ name: 1 });
-                return coaches;
+                return convertArrayToPlainObjects(coaches);
             }
             catch (error) {
                 console.error('Error fetching coaches:', error);

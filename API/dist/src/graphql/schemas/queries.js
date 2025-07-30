@@ -1,6 +1,6 @@
 import { gql } from 'graphql-tag';
 export const querySchema = gql `
-  type Query {
+  extend type Query {
     # Public queries
     sessions(limit: Int = 10, offset: Int = 0): SessionConnection!
     session(id: ID!): Session
@@ -10,9 +10,11 @@ export const querySchema = gql `
     me: User
     users: [User!]! # Admin only
     user(id: ID!): User # Admin only
+    adminUsers: UserConnection! # Admin only
     adminSessions(limit: Int = 10, offset: Int = 0): SessionConnection! # Admin only
-    players: [Player!]!
+    players(limit: Int = 50, offset: Int = 0): PlayerConnection!
     player(id: ID!): Player
+    adminPlayers(limit: Int = 50, offset: Int = 0): PlayerConnection! # Admin only
     bookings: [Booking!]!
     booking(id: ID!): Booking
     reviews: [Review!]!
@@ -25,6 +27,37 @@ export const querySchema = gql `
     customer: Customer
     transactions: [Transaction!]!
     paymentMethods: [PaymentMethod!]!
+    
+    # Admin billing queries
+    billingAnalytics(timeRange: String!): BillingAnalytics # Admin only
+    adminTransactions(
+      limit: Int
+      offset: Int
+      search: String
+      status: String
+      startDate: String
+      endDate: String
+    ): AdminTransactionConnection! # Admin only
+    adminCustomers(
+      limit: Int
+      offset: Int
+      search: String
+      status: String
+      riskLevel: String
+    ): AdminCustomerConnection! # Admin only
+    adminSubscriptions(
+      limit: Int
+      offset: Int
+      status: String
+      interval: String
+    ): AdminSubscriptionConnection! # Admin only
+    refundsDisputes(
+      limit: Int
+      offset: Int
+      type: String
+      status: String
+    ): RefundDisputeConnection! # Admin only
+    billingConfiguration: BillingConfiguration # Admin only
     
     # New Session Template + Schedule Periods + Instances queries
     sessionTemplates(limit: Int = 10, offset: Int = 0): SessionTemplateConnection!

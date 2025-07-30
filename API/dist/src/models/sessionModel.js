@@ -1,6 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
 import slugify from 'slugify';
-import User from './userModel.js';
 // Mongoose Schema
 const sessionSchema = new Schema({
     sport: {
@@ -108,6 +107,19 @@ const sessionSchema = new Schema({
             "elitecamp",
             "xlcamp"
         ]
+    },
+    field: {
+        fieldNumb: {
+            type: String,
+            required: false,
+            default: 'TBD'
+        },
+        location: {
+            type: String,
+            enum: ['Inside', 'Outside', 'TBD'],
+            required: false,
+            default: 'TBD'
+        }
     }
 }, {
     toJSON: { virtuals: true },
@@ -135,12 +147,8 @@ sessionSchema.pre('save', function (next) {
     this.slug = slugify(this.name, { lower: true });
     next();
 });
-// Embedding coaches as part of sessions 
-sessionSchema.pre('save', async function (next) {
-    const coachesPromises = this.trainers.map(async (id) => await User.findById(id));
-    this.trainers = await Promise.all(coachesPromises);
-    next();
-});
+// Note: Removed N+1 query causing pre-save middleware
+// Trainers are now loaded using DataLoader when needed
 // Query Middleware
 sessionSchema.pre(/^find/, function (next) {
     this.find({ staffOnly: { $ne: true } });

@@ -4,6 +4,7 @@ import { authSchema } from './auth';
 import { sessionSchema } from './sessions';
 import { templateSchema } from './templates';
 import { billingSchema } from './billing';
+import { paymentProviderSchema } from './paymentProviders';
 import { bookingSchema } from './bookings';
 import { pageSchema } from './pages';
 import { querySchema } from './queries';
@@ -15,6 +16,7 @@ export const typeDefs = gql`
   ${sessionSchema}
   ${templateSchema}
   ${billingSchema}
+  ${paymentProviderSchema}
   ${bookingSchema}
   ${pageSchema}
   ${querySchema}

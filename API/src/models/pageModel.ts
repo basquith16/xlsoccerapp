@@ -19,6 +19,7 @@ interface IBlock {
 
 // Page interface
 export interface IPage extends Document {
+  id: string; // Add explicit id property for toJSON transformation
   title: string;
   slug: string;
   meta: {
@@ -127,7 +128,7 @@ const pageSchema = new Schema({
 }, {
   timestamps: true,
   toJSON: { 
-    transform: function(doc, ret) {
+    transform: function(doc: any, ret: any) {
       ret.id = ret._id;
       delete ret._id;
       delete ret.__v;

@@ -6,6 +6,7 @@ import { userResolvers } from './users';
 import { sessionResolvers } from './sessions';
 import { bookingResolvers } from './bookings';
 import { billingResolvers } from './billing';
+// import { paymentProviderResolvers } from './paymentProviders'; // Moved to billing resolvers
 import { templateResolvers } from './templates';
 import { periodResolvers } from './periods';
 import { instanceResolvers } from './instances';
@@ -47,6 +48,7 @@ export const resolvers = {
     ...sessionResolvers.Query,
     ...bookingResolvers.Query,
     ...billingResolvers.Query,
+    // ...paymentProviderResolvers.Query, // Moved to billing resolvers
     ...templateResolvers.Query,
     ...periodResolvers.Query,
     ...instanceResolvers.Query,
@@ -59,6 +61,7 @@ export const resolvers = {
     ...sessionResolvers.Mutation,
     ...bookingResolvers.Mutation,
     ...billingResolvers.Mutation,
+    // ...paymentProviderResolvers.Mutation, // Moved to billing resolvers
     ...templateResolvers.Mutation,
     ...periodResolvers.Mutation,
     ...instanceResolvers.Mutation,

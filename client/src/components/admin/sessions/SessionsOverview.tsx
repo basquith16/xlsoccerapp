@@ -7,6 +7,7 @@ import SessionActions from './SessionActions';
 import SessionFilters from './SessionFilters';
 import SessionTable from './SessionTable';
 import CreateSessionForm from '../CreateSessionForm';
+import EditSessionForm from '../EditSessionForm';
 import { useAdminSessions, useCreateSession, useUpdateSession, useDeleteSession } from '../../../services/graphqlService';
 import { useAuth } from '../../../hooks/useAuth';
 
@@ -20,6 +21,7 @@ const SessionsManagement: React.FC<SessionsManagementProps> = () => {
   const [selectedSession, setSelectedSession] = useState<any>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [createError, setCreateError] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
 
@@ -102,8 +104,53 @@ const SessionsManagement: React.FC<SessionsManagementProps> = () => {
   };
 
   const handleEditSession = (session: any) => {
+    setEditError(null);
     setSelectedSession(session);
     setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async (formData: any) => {
+    try {
+      setEditError(null);
+      console.log('Updating session with data:', formData);
+      console.log('Price in formData:', formData.price, 'Type:', typeof formData.price);
+      console.log('PriceDiscount in formData:', formData.priceDiscount, 'Type:', typeof formData.priceDiscount);
+      
+      const result = await updateSession({
+        variables: { 
+          id: selectedSession.id,
+          input: formData 
+        }
+      });
+      
+      console.log('Session updated successfully:', result);
+      setShowEditModal(false);
+      setSelectedSession(null);
+      
+      // Force refetch the sessions list
+      await refetch();
+      console.log('Sessions list refetched');
+      
+    } catch (error: any) {
+      console.error('Error updating session:', error);
+      
+      // Handle specific error types
+      if (error.graphQLErrors && error.graphQLErrors.length > 0) {
+        const graphQLError = error.graphQLErrors[0];
+        
+        if (graphQLError.message.includes('duplicate key error') && graphQLError.message.includes('name')) {
+          setEditError('A session with this name already exists. Please choose a different name.');
+        } else if (graphQLError.message.includes('validation failed')) {
+          setEditError('Please check your input and try again. Some fields may be invalid.');
+        } else {
+          setEditError(graphQLError.message || 'An error occurred while updating the session.');
+        }
+      } else if (error.networkError) {
+        setEditError('Network error. Please check your connection and try again.');
+      } else {
+        setEditError('An unexpected error occurred. Please try again.');
+      }
+    }
   };
 
   const handleDeleteSession = (session: any) => {
@@ -256,13 +303,28 @@ const SessionsManagement: React.FC<SessionsManagementProps> = () => {
       {/* Edit Session Modal */}
       <Modal
         isOpen={showEditModal}
-        onClose={() => setShowEditModal(false)}
+        onClose={() => {
+          setShowEditModal(false);
+          setSelectedSession(null);
+          setEditError(null);
+        }}
         title="Edit Session"
         size="lg"
       >
-        <div className="text-center py-8">
-          <p className="text-gray-600">Session editing form coming soon...</p>
-        </div>
+        {selectedSession && (
+          <EditSessionForm
+            session={selectedSession}
+            onSubmit={handleEditSubmit}
+            onCancel={() => {
+              setShowEditModal(false);
+              setSelectedSession(null);
+              setEditError(null);
+            }}
+            isLoading={updating}
+            error={editError}
+            onErrorClear={() => setEditError(null)}
+          />
+        )}
       </Modal>
 
       {/* Delete Confirmation Modal */}

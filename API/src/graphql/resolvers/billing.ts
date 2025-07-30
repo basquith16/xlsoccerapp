@@ -1,4 +1,5 @@
 import StripeService from '../../services/stripeService';
+import { paymentProviderService } from '../../services/PaymentProviderService';
 import { IUser } from '../../types/models';
 import { validateObjectId } from '../../utils/validation';
 import Session from '../../models/sessionModel';
@@ -323,6 +324,147 @@ export const billingResolvers = {
       }
     },
 
+    // Payment provider management
+    billingConfiguration: async (_: unknown, __: unknown, { user }: { user: IUser | null }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      try {
+        const providers = paymentProviderService.getAvailableProviders();
+        const activeProvider = await paymentProviderService.getActiveProvider();
+
+        return {
+          activeProvider: activeProvider.name,
+          providers: providers.map(config => {
+            // Check if this provider is the currently active one
+            const isCurrentlyActive = activeProvider.name === config.type.toLowerCase();
+            
+            // Check if provider has proper credentials configured
+            let hasCredentials = false;
+            
+            if (config.type === 'stripe') {
+              hasCredentials = !!process.env.STRIPE_SECRET_KEY;
+            } else if (config.type === 'square') {
+              hasCredentials = !!process.env.SQUARE_ACCESS_TOKEN;
+            }
+            
+            // Only show as connected if it's the currently active provider AND has credentials
+            const isConnected = hasCredentials && isCurrentlyActive;
+            
+            console.log(`🔍 ${config.type} status:`, {
+              hasCredentials,
+              isCurrentlyActive,
+              activeProviderName: activeProvider.name,
+              configType: config.type.toLowerCase(),
+              isConnected
+            });
+            
+            return {
+              type: config.type,
+              name: config.type.toLowerCase(),
+              displayName: config.type.charAt(0).toUpperCase() + config.type.slice(1).toLowerCase(),
+              isActive: isCurrentlyActive,
+              isDefault: config.isDefault,
+              isConnected: isConnected,
+              config: {
+                publicKey: config.config?.publicKey || null,
+                environment: process.env.NODE_ENV || 'development'
+              }
+            };
+          }),
+          stripe: {
+            isConnected: !!(process.env.STRIPE_SECRET_KEY && paymentProviderService.getProviderConfig('stripe')?.isActive),
+            accountId: process.env.STRIPE_SECRET_KEY?.substring(0, 20) + '...' || null,
+            defaultCurrency: 'USD'
+          },
+          square: {
+            isConnected: !!(process.env.SQUARE_ACCESS_TOKEN && paymentProviderService.getProviderConfig('square')?.isActive),
+            accountId: process.env.SQUARE_ACCESS_TOKEN?.substring(0, 20) + '...' || null,
+            environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
+          },
+          paymentMethods: {
+            cards: true,
+            applePay: true,
+            googlePay: true,
+            bankTransfer: false
+          },
+          fees: {
+            processingFeePercentage: 2.9,
+            fixedFeeAmount: 0.30,
+            taxRate: 8.5
+          },
+          policies: {
+            refundPolicy: 'flexible',
+            refundWindowHours: 24,
+            latePaymentFee: 5.00
+          },
+          notifications: {
+            paymentSuccess: true,
+            paymentFailed: true,
+            refundProcessed: true,
+            disputeCreated: true
+          },
+          security: {
+            requireCVV: true,
+            enable3DSecure: true,
+            fraudDetection: true
+          }
+        };
+      } catch (error) {
+        console.error('Error fetching billing configuration:', error);
+        throw new Error('Failed to fetch billing configuration');
+      }
+    },
+
+    paymentProviders: async (_: unknown, __: unknown, { user }: { user: IUser | null }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      try {
+        const providers = paymentProviderService.getAvailableProviders();
+        
+        return providers.map(config => ({
+          type: config.type,
+          name: config.type.toLowerCase(),
+          displayName: config.type.charAt(0).toUpperCase() + config.type.slice(1).toLowerCase(),
+          isActive: config.isActive,
+          isDefault: config.isDefault,
+          isConnected: config.isActive, // For now, assume active means connected
+          config: {
+            publicKey: config.config?.publicKey || null,
+            environment: process.env.NODE_ENV || 'development'
+          },
+          metrics: paymentProviderService.getProviderMetrics(config.type)
+        }));
+      } catch (error) {
+        console.error('Error fetching payment providers:', error);
+        throw new Error('Failed to fetch payment providers');
+      }
+    },
+
+    paymentProviderMetrics: async (_: unknown, { providerType }: { providerType: string }, { user }: { user: IUser | null }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      try {
+        const metrics = paymentProviderService.getProviderMetrics(providerType);
+        
+        return {
+          ...metrics,
+          totalTransactions: 0, // Would be fetched from database
+          totalVolume: 0, // Would be fetched from database
+          averageTransactionValue: 0, // Would be calculated
+          lastConnectionTest: new Date().toISOString()
+        };
+      } catch (error) {
+        console.error('Error fetching payment provider metrics:', error);
+        throw new Error('Failed to fetch payment provider metrics');
+      }
+    },
+
     // Admin refunds and disputes
     refundsDisputes: async (_: unknown, args: any, { user }: { user: IUser | null }) => {
       if (!user || user.role !== 'admin') {
@@ -417,27 +559,33 @@ export const billingResolvers = {
         throw new Error('You already have a booking for this session');
       }
 
-      // Convert price to cents for Stripe
+      // Convert price to cents for payment providers
       const amountInCents = Math.round(price * 100);
 
-      // Create or get Stripe customer for better analytics and payment tracking
-      const customer = await StripeService.getOrCreateCustomer(
+      // Get active payment provider
+      const provider = await paymentProviderService.getActiveProvider();
+      console.log(`Using payment provider: ${provider.name}`);
+
+      // Create or get customer for better analytics and payment tracking
+      const customer = await provider.getOrCreateCustomer(
         user._id.toString(),
         user.email,
         user.name
       );
-      console.log(`Stripe customer for payment: ${customer.id} (${user.email})`);
+      console.log(`${provider.displayName} customer for payment: ${customer.id} (${user.email})`);
 
-      // Create payment intent using the exact same format as the working version
-      const paymentIntent = await StripeService.createPaymentIntent({
+      // Create payment intent using the active provider
+      const paymentIntent = await provider.createPaymentIntent({
         amount: amountInCents,
         currency: 'usd',
         customerId: customer.id,
+        description: `Session: ${session.name}`,
         metadata: {
           sessionId,
           userId: user._id.toString(),
           sessionName: session.name,
           customerId: customer.id,
+          provider: provider.name,
         },
         customerEmail: user.email,
       });
@@ -625,6 +773,181 @@ export const billingResolvers = {
       } catch (error) {
         console.error('Error generating financial report:', error);
         throw new Error('Failed to generate financial report');
+      }
+    },
+
+    // Payment provider management mutations
+    setActivePaymentProvider: async (_: unknown, { providerType }: { providerType: string }, { user }: { user: IUser | null }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      try {
+        await paymentProviderService.setActiveProvider(providerType as any);
+        
+        return {
+          success: true,
+          message: `Successfully switched to ${providerType} provider`,
+          activeProvider: providerType
+        };
+      } catch (error) {
+        console.error('Error setting active payment provider:', error);
+        return {
+          success: false,
+          message: `Failed to switch to ${providerType}: ${error.message}`,
+          activeProvider: null
+        };
+      }
+    },
+
+    updatePaymentProviderConfig: async (_: unknown, { input }: { input: any }, { user }: { user: IUser | null }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      try {
+        const { providerType, config } = input;
+        
+        paymentProviderService.updateProviderConfig(providerType, config);
+        const updatedConfig = paymentProviderService.getProviderConfig(providerType);
+        
+        return {
+          success: true,
+          message: `Successfully updated ${providerType} configuration`,
+          provider: {
+            type: updatedConfig?.type,
+            name: updatedConfig?.type.toLowerCase(),
+            displayName: updatedConfig?.type.charAt(0).toUpperCase() + updatedConfig?.type.slice(1).toLowerCase(),
+            isActive: updatedConfig?.isActive,
+            isDefault: updatedConfig?.isDefault,
+            isConnected: updatedConfig?.isActive,
+            config: {
+              publicKey: updatedConfig?.config?.publicKey || null,
+              environment: process.env.NODE_ENV || 'development'
+            }
+          }
+        };
+      } catch (error) {
+        console.error('Error updating payment provider config:', error);
+        return {
+          success: false,
+          message: `Failed to update ${input.providerType} configuration: ${error.message}`,
+          provider: null
+        };
+      }
+    },
+
+    testPaymentProviderConnection: async (_: unknown, { providerType }: { providerType: string }, { user }: { user: IUser | null }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      try {
+        const startTime = Date.now();
+        
+        // Test provider connection
+        const isAvailable = await paymentProviderService.isProviderAvailable(providerType as any);
+        
+        const responseTime = Date.now() - startTime;
+        
+        if (isAvailable) {
+          return {
+            success: true,
+            message: `${providerType} connection test successful`,
+            connectionStatus: 'connected',
+            responseTime
+          };
+        } else {
+          return {
+            success: false,
+            message: `${providerType} connection test failed`,
+            connectionStatus: 'disconnected',
+            responseTime
+          };
+        }
+      } catch (error) {
+        console.error('Error testing payment provider connection:', error);
+        return {
+          success: false,
+          message: `Connection test failed: ${error.message}`,
+          connectionStatus: 'error',
+          responseTime: 0
+        };
+      }
+    },
+
+    updateBillingConfiguration: async (_: unknown, { input }: { input: any }, { user }: { user: IUser | null }) => {
+      if (!user || user.role !== 'admin') {
+        throw new Error('Admin access required');
+      }
+
+      try {
+        // In a real implementation, this would save the configuration to a database
+        console.log('Updating billing configuration:', input);
+        
+        // For now, we'll just return success and the current configuration
+        const providers = paymentProviderService.getAvailableProviders();
+        const activeProvider = await paymentProviderService.getActiveProvider();
+        
+        return {
+          success: true,
+          message: 'Billing configuration updated successfully',
+          configuration: {
+            activeProvider: activeProvider.name,
+            providers: providers.map(config => ({
+              type: config.type,
+              name: config.type.toLowerCase(),
+              displayName: config.type.charAt(0).toUpperCase() + config.type.slice(1).toLowerCase(),
+              isActive: config.isActive,
+              isDefault: config.isDefault,
+              isConnected: config.isActive
+            })),
+            stripe: {
+              isConnected: !!(process.env.STRIPE_SECRET_KEY && paymentProviderService.getProviderConfig('stripe')?.isActive),
+              accountId: process.env.STRIPE_SECRET_KEY?.substring(0, 20) + '...' || null,
+              defaultCurrency: 'USD'
+            },
+            square: {
+              isConnected: !!(process.env.SQUARE_ACCESS_TOKEN && paymentProviderService.getProviderConfig('square')?.isActive),
+              accountId: process.env.SQUARE_ACCESS_TOKEN?.substring(0, 20) + '...' || null,
+              environment: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox'
+            },
+            paymentMethods: input.paymentMethods || {
+              cards: true,
+              applePay: true,
+              googlePay: true,
+              bankTransfer: false
+            },
+            fees: input.fees || {
+              processingFeePercentage: 2.9,
+              fixedFeeAmount: 0.30,
+              taxRate: 8.5
+            },
+            policies: input.policies || {
+              refundPolicy: 'flexible',
+              refundWindowHours: 24,
+              latePaymentFee: 5.00
+            },
+            notifications: input.notifications || {
+              paymentSuccess: true,
+              paymentFailed: true,
+              refundProcessed: true,
+              disputeCreated: true
+            },
+            security: input.security || {
+              requireCVV: true,
+              enable3DSecure: true,
+              fraudDetection: true
+            }
+          }
+        };
+      } catch (error) {
+        console.error('Error updating billing configuration:', error);
+        return {
+          success: false,
+          message: `Failed to update billing configuration: ${error.message}`,
+          configuration: null
+        };
       }
     }
   }

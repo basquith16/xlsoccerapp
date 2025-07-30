@@ -16,7 +16,6 @@ export const GET_BOOKINGS = gql`
           maxAge
         }
         price
-        priceDiscount
         startDates
         endDate
         timeStart
@@ -67,7 +66,6 @@ export const GET_BOOKING = gql`
           maxAge
         }
         price
-        priceDiscount
         startDates
         endDate
         timeStart

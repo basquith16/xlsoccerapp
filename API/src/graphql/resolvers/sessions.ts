@@ -119,15 +119,34 @@ export const sessionResolvers = {
       }
 
       try {
-        const session = await Session.findByIdAndUpdate(
-          id,
-          { ...input, updatedAt: new Date() },
-          { new: true, runValidators: true }
-        );
-
+        // When updating both price and priceDiscount, we need to handle validation properly
+        // findByIdAndUpdate runs validators with old document values, causing issues
+        
+        const session = await Session.findById(id);
         if (!session) {
           throw new Error('Session not found');
         }
+
+        // Apply updates to the document
+        Object.keys(input).forEach(key => {
+          if (key === 'ageRange' && typeof input[key] === 'string') {
+            // Parse ageRange string to object
+            const ageRangeParts = input[key].split('-').map((part: string) => part.trim());
+            if (ageRangeParts.length === 2) {
+              const minAge = parseInt(ageRangeParts[0]);
+              const maxAge = parseInt(ageRangeParts[1]);
+              if (!isNaN(minAge) && !isNaN(maxAge)) {
+                (session as any).ageRange = { minAge, maxAge };
+              }
+            }
+          } else {
+            (session as any)[key] = input[key];
+          }
+        });
+        session.updatedAt = new Date();
+
+        // Save will run validators with the new values
+        await session.save();
 
         console.log(`Admin ${user.email} updated session: ${session.name} (ID: ${session._id})`);
         

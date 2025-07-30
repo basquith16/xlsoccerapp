@@ -1,19 +1,129 @@
 import SessionInstance from '../../models/sessionInstanceModel';
 import SchedulePeriod from '../../models/schedulePeriodModel';
 import { validateObjectId } from '../../utils/validation';
+// Helper function to convert Mongoose documents to plain objects with string IDs
+const convertToPlainObject = (doc) => {
+    if (!doc)
+        return doc;
+    const plain = doc.toObject ? doc.toObject() : doc;
+    // Convert ObjectIds to strings
+    if (plain._id) {
+        plain.id = plain._id.toString();
+        delete plain._id;
+    }
+    // Convert Date objects to ISO strings
+    if (plain.date) {
+        plain.date = new Date(plain.date).toISOString();
+    }
+    if (plain.createdAt) {
+        plain.createdAt = new Date(plain.createdAt).toISOString();
+    }
+    if (plain.updatedAt) {
+        plain.updatedAt = new Date(plain.updatedAt).toISOString();
+    }
+    // Map templateInfo to template field for GraphQL
+    if (plain.templateInfo) {
+        plain.template = plain.templateInfo;
+        delete plain.templateInfo;
+    }
+    else {
+        // If templateInfo is null/undefined, provide a default template object
+        plain.template = {
+            id: plain.template || 'unknown',
+            name: 'Unknown Template',
+            sport: 'Unknown',
+            demo: 'Unknown'
+        };
+    }
+    // Map periodInfo to period field for GraphQL
+    if (plain.periodInfo) {
+        plain.period = plain.periodInfo;
+        delete plain.periodInfo;
+    }
+    else {
+        // If periodInfo is null/undefined, provide a default period object
+        plain.period = {
+            id: plain.period || 'unknown',
+            name: 'Unknown Period',
+            startDate: new Date().toISOString(),
+            endDate: new Date().toISOString(),
+            capacity: 0
+        };
+    }
+    // Handle coaches array - ensure all coaches have required fields
+    if (plain.coaches && Array.isArray(plain.coaches)) {
+        plain.coaches = plain.coaches.map((coach) => {
+            if (!coach)
+                return null;
+            const coachObj = typeof coach === 'object' ? coach : { id: coach };
+            // Ensure coach has required fields
+            return {
+                id: coachObj.id || coachObj._id?.toString() || 'unknown',
+                name: coachObj.name || 'Unknown Coach',
+                email: coachObj.email || 'unknown@example.com',
+                role: coachObj.role || 'coach'
+            };
+        }).filter(Boolean); // Remove null entries
+    }
+    else {
+        plain.coaches = [];
+    }
+    // Calculate virtual properties if they're missing
+    const now = new Date();
+    const instanceDate = new Date(plain.date);
+    if (plain.isUpcoming === undefined) {
+        plain.isUpcoming = instanceDate > now;
+    }
+    if (plain.isPast === undefined) {
+        plain.isPast = instanceDate < now;
+    }
+    if (plain.isToday === undefined) {
+        const today = new Date();
+        plain.isToday = instanceDate.toDateString() === today.toDateString();
+    }
+    if (plain.isThisWeek === undefined) {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        plain.isThisWeek = instanceDate >= weekStart && instanceDate <= weekEnd;
+    }
+    if (plain.isThisMonth === undefined) {
+        plain.isThisMonth = instanceDate.getMonth() === now.getMonth() &&
+            instanceDate.getFullYear() === now.getFullYear();
+    }
+    if (plain.availableSpots === undefined) {
+        plain.availableSpots = Math.max(0, (plain.capacity || 0) - (plain.bookedCount || 0));
+    }
+    if (plain.isFull === undefined) {
+        plain.isFull = (plain.bookedCount || 0) >= (plain.capacity || 0);
+    }
+    if (plain.isAvailable === undefined) {
+        plain.isAvailable = plain.isActive && !plain.isCancelled && !plain.isFull;
+    }
+    if (plain.bookingPercentage === undefined) {
+        const capacity = plain.capacity || 1;
+        const booked = plain.bookedCount || 0;
+        plain.bookingPercentage = Math.round((booked / capacity) * 100);
+    }
+    return plain;
+};
+const convertArrayToPlainObjects = (docs) => {
+    return docs.map(convertToPlainObject);
+};
 export const instanceResolvers = {
     Query: {
         sessionInstances: async (_, { limit = 10, offset = 0 }) => {
             const instances = await SessionInstance.find({ isActive: true })
                 .populate('templateInfo')
                 .populate('periodInfo')
-                .populate('coachInfo')
+                .populate('coaches')
                 .limit(limit)
                 .skip(offset);
             const totalCount = await SessionInstance.countDocuments({ isActive: true });
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: instances,
+                nodes: convertArrayToPlainObjects(instances),
                 totalCount,
                 hasNextPage
             };
@@ -25,11 +135,11 @@ export const instanceResolvers = {
             const instance = await SessionInstance.findById(id)
                 .populate('templateInfo')
                 .populate('periodInfo')
-                .populate('coachInfo');
+                .populate('coaches');
             if (!instance) {
                 throw new Error('Session instance not found');
             }
-            return instance;
+            return convertToPlainObject(instance);
         },
         sessionInstancesByPeriod: async (_, { periodId, limit = 10, offset = 0 }) => {
             if (!validateObjectId(periodId)) {
@@ -38,13 +148,13 @@ export const instanceResolvers = {
             const instances = await SessionInstance.find({ period: periodId, isActive: true })
                 .populate('templateInfo')
                 .populate('periodInfo')
-                .populate('coachInfo')
+                .populate('coaches')
                 .limit(limit)
                 .skip(offset);
             const totalCount = await SessionInstance.countDocuments({ period: periodId, isActive: true });
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: instances,
+                nodes: convertArrayToPlainObjects(instances),
                 totalCount,
                 hasNextPage
             };
@@ -56,13 +166,13 @@ export const instanceResolvers = {
             const instances = await SessionInstance.find({ template: templateId, isActive: true })
                 .populate('templateInfo')
                 .populate('periodInfo')
-                .populate('coachInfo')
+                .populate('coaches')
                 .limit(limit)
                 .skip(offset);
             const totalCount = await SessionInstance.countDocuments({ template: templateId, isActive: true });
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: instances,
+                nodes: convertArrayToPlainObjects(instances),
                 totalCount,
                 hasNextPage
             };
@@ -74,13 +184,13 @@ export const instanceResolvers = {
             const instances = await SessionInstance.find({})
                 .populate('templateInfo')
                 .populate('periodInfo')
-                .populate('coachInfo')
+                .populate('coaches')
                 .limit(limit)
                 .skip(offset);
             const totalCount = await SessionInstance.countDocuments({});
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: instances,
+                nodes: convertArrayToPlainObjects(instances),
                 totalCount,
                 hasNextPage
             };

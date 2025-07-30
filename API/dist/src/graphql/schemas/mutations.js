@@ -1,10 +1,10 @@
 import { gql } from 'graphql-tag';
 export const mutationSchema = gql `
-  type Mutation {
+  extend type Mutation {
     # Authentication
     signup(input: CreateUserInput!): AuthResponse!
     login(input: LoginInput!): AuthResponse!
-    logout: String!
+    logout: LogoutResponse!
     forgotPassword(email: String!): PasswordResetResponse!
     resetPassword(token: String!, password: String!, passwordConfirm: String!): AuthResponse!
     updatePassword(currentPassword: String!, newPassword: String!, newPasswordConfirm: String!): AuthResponse!
@@ -26,10 +26,15 @@ export const mutationSchema = gql `
     
     # Payment operations
     createPaymentIntent(input: CreatePaymentIntentInput!): PaymentIntent!
+    verifyPaymentIntent(input: VerifyPaymentIntentInput!): PaymentIntentVerification!
     createSetupIntent(input: CreateSetupIntentInput!): SetupIntent!
     attachPaymentMethod(input: AttachPaymentMethodInput!): PaymentMethod!
     detachPaymentMethod(input: DetachPaymentMethodInput!): String!
     setDefaultPaymentMethod(input: SetDefaultPaymentMethodInput!): Customer!
+    
+    # Admin billing operations
+    generateFinancialReport(input: GenerateReportInput!): ReportGeneration! # Admin only
+    updateBillingConfiguration(input: UpdateBillingConfigInput!): BillingConfigUpdateResult! # Admin only
     
     # Review operations
     createReview(input: CreateReviewInput!): Review!
@@ -39,6 +44,11 @@ export const mutationSchema = gql `
     # Family operations
     addFamilyMember(input: AddFamilyMemberInput!): FamilyMember!
     removeFamilyMember(memberId: ID!): String!
+    
+    # Player operations (Admin only)
+    createPlayer(input: CreatePlayerInput!): Player!
+    updatePlayer(id: ID!, input: UpdatePlayerInput!): Player!
+    deletePlayer(id: ID!): String!
     
     # New Session Template + Schedule Periods + Instances mutations (Admin only)
     createSessionTemplate(input: CreateSessionTemplateInput!): SessionTemplate!

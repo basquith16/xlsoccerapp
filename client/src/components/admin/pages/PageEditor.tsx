@@ -515,7 +515,7 @@ const PageEditor: React.FC<PageEditorProps> = memo(({
                       value={pageData.slug}
                       onChange={(e) => setPageData(prev => ({ ...prev, slug: e.target.value }))}
                       placeholder="page-url"
-                      className="text-sm text-slate-600 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md px-2 py-1 placeholder-slate-400 hover:bg-slate-50 transition-colors min-w-[120px]"
+                      className="text-sm text-slate-600 bg-white border border-slate-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 rounded-md px-2 py-1 placeholder-slate-400 hover:border-slate-400 transition-colors min-w-[120px]"
                     />
                   </div>
                 </div>

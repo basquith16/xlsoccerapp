@@ -253,10 +253,31 @@ export const GENERATE_FINANCIAL_REPORT = gql`
 export const GET_BILLING_CONFIGURATION = gql`
   query GetBillingConfiguration {
     billingConfiguration {
+      activeProvider
+      
+      providers {
+        type
+        name
+        displayName
+        isActive
+        isDefault
+        isConnected
+        config {
+          publicKey
+          environment
+        }
+      }
+      
       stripe {
         isConnected
         accountId
         defaultCurrency
+      }
+      
+      square {
+        isConnected
+        accountId
+        environment
       }
       
       paymentMethods {
@@ -294,16 +315,55 @@ export const GET_BILLING_CONFIGURATION = gql`
   }
 `;
 
+export const GET_PAYMENT_PROVIDERS = gql`
+  query GetPaymentProviders {
+    paymentProviders {
+      type
+      name
+      displayName
+      isActive
+      isDefault
+      isConnected
+      config {
+        publicKey
+        environment
+      }
+      metrics {
+        loadTime
+        successRate
+        isLoaded
+      }
+    }
+  }
+`;
+
 export const UPDATE_BILLING_CONFIGURATION = gql`
   mutation UpdateBillingConfiguration($input: UpdateBillingConfigInput!) {
     updateBillingConfiguration(input: $input) {
       success
       message
       configuration {
+        activeProvider
+        
+        providers {
+          type
+          name
+          displayName
+          isActive
+          isDefault
+          isConnected
+        }
+        
         stripe {
           isConnected
           accountId
           defaultCurrency
+        }
+        
+        square {
+          isConnected
+          accountId
+          environment
         }
         
         paymentMethods {
@@ -338,6 +398,64 @@ export const UPDATE_BILLING_CONFIGURATION = gql`
           fraudDetection
         }
       }
+    }
+  }
+`;
+
+export const SET_ACTIVE_PAYMENT_PROVIDER = gql`
+  mutation SetActivePaymentProvider($providerType: String!) {
+    setActivePaymentProvider(providerType: $providerType) {
+      success
+      message
+      activeProvider
+    }
+  }
+`;
+
+export const UPDATE_PAYMENT_PROVIDER_CONFIG = gql`
+  mutation UpdatePaymentProviderConfig($input: UpdateProviderConfigInput!) {
+    updatePaymentProviderConfig(input: $input) {
+      success
+      message
+      provider {
+        type
+        name
+        displayName
+        isActive
+        isDefault
+        isConnected
+        config {
+          publicKey
+          environment
+        }
+      }
+    }
+  }
+`;
+
+export const TEST_PAYMENT_PROVIDER_CONNECTION = gql`
+  mutation TestPaymentProviderConnection($providerType: String!) {
+    testPaymentProviderConnection(providerType: $providerType) {
+      success
+      message
+      connectionStatus
+      responseTime
+    }
+  }
+`;
+
+export const GET_PAYMENT_PROVIDER_METRICS = gql`
+  query GetPaymentProviderMetrics($providerType: String!) {
+    paymentProviderMetrics(providerType: $providerType) {
+      provider
+      isLoaded
+      isActive
+      loadTime
+      successRate
+      totalTransactions
+      totalVolume
+      averageTransactionValue
+      lastConnectionTest
     }
   }
 `;

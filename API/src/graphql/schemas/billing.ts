@@ -273,8 +273,65 @@ export const billingSchema = gql`
     totalAmount: Float!
   }
 
+  # Payment Provider Management Types
+  type PaymentProviderInfo {
+    type: String!
+    name: String!
+    displayName: String!
+    isActive: Boolean!
+    isDefault: Boolean!
+    isConnected: Boolean!
+    config: PaymentProviderConfigInfo
+  }
+
+  type PaymentProviderConfigInfo {
+    publicKey: String
+    environment: String
+  }
+
+  type PaymentProviderMetricsInfo {
+    provider: String!
+    isLoaded: Boolean!
+    isActive: Boolean!
+    loadTime: Float!
+    successRate: Float!
+    totalTransactions: Int!
+    totalVolume: Float!
+    averageTransactionValue: Float!
+    lastConnectionTest: String!
+  }
+
+  type PaymentProviderTestResult {
+    success: Boolean!
+    message: String!
+    connectionStatus: String!
+    responseTime: Float!
+  }
+
+  type PaymentProviderSwitchResult {
+    success: Boolean!
+    message: String!
+    activeProvider: String
+  }
+
+  type PaymentProviderUpdateResult {
+    success: Boolean!
+    message: String!
+    provider: PaymentProviderInfo
+  }
+
+  input UpdateProviderConfigInput {
+    providerType: String!
+    config: JSON
+    isActive: Boolean
+    isDefault: Boolean
+  }
+
   type BillingConfiguration {
+    activeProvider: String!
+    providers: [PaymentProviderInfo!]!
     stripe: StripeConfig!
+    square: SquareConfig!
     paymentMethods: PaymentMethodConfig!
     fees: FeeConfig!
     policies: PolicyConfig!
@@ -286,6 +343,12 @@ export const billingSchema = gql`
     isConnected: Boolean!
     accountId: String
     defaultCurrency: String!
+  }
+
+  type SquareConfig {
+    isConnected: Boolean!
+    accountId: String
+    environment: String!
   }
 
   type PaymentMethodConfig {
@@ -335,6 +398,7 @@ export const billingSchema = gql`
   }
 
   input UpdateBillingConfigInput {
+    activeProvider: String
     paymentMethods: PaymentMethodConfigInput
     fees: FeeConfigInput
     policies: PolicyConfigInput
@@ -378,5 +442,32 @@ export const billingSchema = gql`
     success: Boolean!
     message: String!
     configuration: BillingConfiguration
+  }
+
+  # Extend existing Query type with payment provider management
+  extend type Query {
+    # Get billing configuration including payment providers
+    billingConfiguration: BillingConfiguration
+    
+    # Get all payment providers (admin only)
+    paymentProviders: [PaymentProviderInfo!]!
+    
+    # Get payment provider metrics (admin only)
+    paymentProviderMetrics(providerType: String!): PaymentProviderMetricsInfo!
+  }
+
+  # Extend existing Mutation type with payment provider management
+  extend type Mutation {
+    # Set active payment provider (admin only)
+    setActivePaymentProvider(providerType: String!): PaymentProviderSwitchResult!
+    
+    # Update payment provider configuration (admin only)
+    updatePaymentProviderConfig(input: UpdateProviderConfigInput!): PaymentProviderUpdateResult!
+    
+    # Test payment provider connection (admin only)
+    testPaymentProviderConnection(providerType: String!): PaymentProviderTestResult!
+    
+    # Update billing configuration (admin only)
+    updateBillingConfiguration(input: UpdateBillingConfigInput!): BillingConfigUpdateResult!
   }
 `; 

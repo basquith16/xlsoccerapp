@@ -1,5 +1,6 @@
 import Player from '../../models/playerModel';
-import { validateObjectId } from '../../utils/validation';
+import User from '../../models/userModel';
+import { validateObjectId, sanitizeInput } from '../../utils/validation';
 export const familyResolvers = {
     Query: {
         familyMembers: async (_, __, { user }) => {
@@ -9,10 +10,38 @@ export const familyResolvers = {
             const players = await Player.find({ parent: user._id });
             return players;
         },
-        players: async () => {
+        players: async (_, { limit = 50, offset = 0 }, { user }) => {
+            if (!user || user.role !== 'admin') {
+                throw new Error('Not authorized - Admin access required');
+            }
+            const players = await Player.find({})
+                .populate('parent', 'name email')
+                .limit(limit)
+                .skip(offset)
+                .sort({ createdAt: -1 });
+            const totalCount = await Player.countDocuments({});
+            const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: await Player.find({}),
-                totalCount: await Player.countDocuments({})
+                nodes: players,
+                totalCount,
+                hasNextPage
+            };
+        },
+        adminPlayers: async (_, { limit = 50, offset = 0 }, { user }) => {
+            if (!user || user.role !== 'admin') {
+                throw new Error('Not authorized - Admin access required');
+            }
+            const players = await Player.find({})
+                .populate('parent', 'name email role')
+                .limit(limit)
+                .skip(offset)
+                .sort({ createdAt: -1 });
+            const totalCount = await Player.countDocuments({});
+            const hasNextPage = offset + limit < totalCount;
+            return {
+                nodes: players,
+                totalCount,
+                hasNextPage
             };
         },
         player: async (_, { id }) => {
@@ -62,10 +91,119 @@ export const familyResolvers = {
             }
             await Player.findByIdAndDelete(memberId);
             return 'Family member removed successfully';
+        },
+        // Admin mutations
+        createPlayer: async (_, { input }, { user }) => {
+            if (!user || user.role !== 'admin') {
+                throw new Error('Not authorized - Admin access required');
+            }
+            const { name, birthDate, sex, waiverSigned, profImg, parentId } = input;
+            // Validate required fields
+            if (!name || !birthDate || !sex || !parentId) {
+                throw new Error('Name, birth date, sex, and parent ID are required');
+            }
+            // Validate parent exists
+            if (!validateObjectId(parentId)) {
+                throw new Error('Invalid parent ID format');
+            }
+            const parent = await User.findById(parentId);
+            if (!parent) {
+                throw new Error('Parent user not found');
+            }
+            // Calculate if minor (under 18)
+            const birthDateObj = new Date(birthDate);
+            const today = new Date();
+            const age = today.getFullYear() - birthDateObj.getFullYear();
+            const monthDiff = today.getMonth() - birthDateObj.getMonth();
+            const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate()) ? age - 1 : age;
+            const isMinor = actualAge < 18;
+            const player = new Player({
+                name: sanitizeInput(name),
+                birthDate: birthDateObj,
+                sex,
+                waiverSigned: waiverSigned || false,
+                isMinor,
+                profImg: profImg || 'default.jpg',
+                parent: parentId
+            });
+            await player.save();
+            await player.populate('parent', 'name email');
+            return player;
+        },
+        updatePlayer: async (_, { id, input }, { user }) => {
+            if (!user || user.role !== 'admin') {
+                throw new Error('Not authorized - Admin access required');
+            }
+            if (!validateObjectId(id)) {
+                throw new Error('Invalid player ID format');
+            }
+            const player = await Player.findById(id);
+            if (!player) {
+                throw new Error('Player not found');
+            }
+            const { name, birthDate, sex, waiverSigned, profImg, parentId } = input;
+            const updateData = {};
+            if (name !== undefined) {
+                updateData.name = sanitizeInput(name);
+            }
+            if (birthDate !== undefined) {
+                const birthDateObj = new Date(birthDate);
+                updateData.birthDate = birthDateObj;
+                // Recalculate isMinor if birthDate changes
+                const today = new Date();
+                const age = today.getFullYear() - birthDateObj.getFullYear();
+                const monthDiff = today.getMonth() - birthDateObj.getMonth();
+                const actualAge = monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate()) ? age - 1 : age;
+                updateData.isMinor = actualAge < 18;
+            }
+            if (sex !== undefined) {
+                updateData.sex = sex;
+            }
+            if (waiverSigned !== undefined) {
+                updateData.waiverSigned = waiverSigned;
+            }
+            if (profImg !== undefined) {
+                updateData.profImg = profImg;
+            }
+            if (parentId !== undefined) {
+                if (!validateObjectId(parentId)) {
+                    throw new Error('Invalid parent ID format');
+                }
+                const parent = await User.findById(parentId);
+                if (!parent) {
+                    throw new Error('Parent user not found');
+                }
+                updateData.parent = parentId;
+            }
+            const updatedPlayer = await Player.findByIdAndUpdate(id, updateData, { new: true, runValidators: true }).populate('parent', 'name email');
+            return updatedPlayer;
+        },
+        deletePlayer: async (_, { id }, { user }) => {
+            if (!user || user.role !== 'admin') {
+                throw new Error('Not authorized - Admin access required');
+            }
+            if (!validateObjectId(id)) {
+                throw new Error('Invalid player ID format');
+            }
+            const player = await Player.findById(id);
+            if (!player) {
+                throw new Error('Player not found');
+            }
+            await Player.findByIdAndDelete(id);
+            return 'Player deleted successfully';
         }
     },
     Player: {
         id: (parent) => parent._id || parent.id,
         birthDate: (parent) => parent.birthDate?.toISOString ? parent.birthDate.toISOString() : parent.birthDate,
+        parent: async (parent, _, { loaders }) => {
+            if (parent.parent && typeof parent.parent === 'object' && parent.parent._id) {
+                return parent.parent;
+            }
+            if (parent.parent && typeof parent.parent === 'string') {
+                return await loaders.userLoader.load(parent.parent);
+            }
+            return null;
+        }
     }
 };

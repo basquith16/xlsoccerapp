@@ -14,7 +14,6 @@ export const CREATE_SESSION = gql`
         maxAge
       }
       price
-      priceDiscount
       startDates
       endDate
       timeStart
@@ -52,7 +51,6 @@ export const UPDATE_SESSION = gql`
         maxAge
       }
       price
-      priceDiscount
       startDates
       endDate
       timeStart

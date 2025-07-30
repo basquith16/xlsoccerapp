@@ -12,7 +12,7 @@ export class StripeService {
      */
     static async createPaymentIntent(params) {
         try {
-            const paymentIntent = await stripe.paymentIntents.create({
+            const paymentIntentParams = {
                 amount: params.amount,
                 currency: params.currency || 'usd',
                 metadata: params.metadata,
@@ -20,7 +20,17 @@ export class StripeService {
                 automatic_payment_methods: {
                     enabled: true,
                 },
-            });
+            };
+            // Associate with customer if provided for better analytics
+            if (params.customerId) {
+                paymentIntentParams.customer = params.customerId;
+                // This tells Stripe to save the payment method to the customer
+                paymentIntentParams.setup_future_usage = 'on_session';
+                console.log(`Creating payment intent for customer: ${params.customerId}`);
+            }
+            console.log('Stripe PaymentIntent params:', JSON.stringify(paymentIntentParams, null, 2));
+            const paymentIntent = await stripe.paymentIntents.create(paymentIntentParams);
+            console.log(`Created PaymentIntent: ${paymentIntent.id} for customer: ${paymentIntent.customer}`);
             return {
                 id: paymentIntent.id,
                 clientSecret: paymentIntent.client_secret,
@@ -198,7 +208,16 @@ export class StripeService {
      */
     static async getPaymentIntent(paymentIntentId) {
         try {
-            const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+            const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId, {
+                expand: ['customer', 'payment_method']
+            });
+            console.log(`🔍 Retrieved PaymentIntent ${paymentIntentId}:`, {
+                id: paymentIntent.id,
+                status: paymentIntent.status,
+                customer: paymentIntent.customer,
+                payment_method: paymentIntent.payment_method,
+                setup_future_usage: paymentIntent.setup_future_usage
+            });
             return paymentIntent;
         }
         catch (error) {
@@ -230,6 +249,78 @@ export class StripeService {
         catch (error) {
             console.error('Webhook signature verification failed:', error);
             throw new Error('Invalid webhook signature');
+        }
+    }
+    /**
+     * Get payment intents for admin (with filters)
+     */
+    static async getPaymentIntents(params = {}) {
+        try {
+            const paymentIntents = await stripe.paymentIntents.list({
+                limit: params.limit || 50,
+                created: params.created,
+                customer: params.customer,
+                expand: ['data.customer'], // Expand customer data
+                ...params
+            });
+            console.log(`🔍 StripeService.getPaymentIntents retrieved ${paymentIntents.data.length} payment intents`);
+            if (paymentIntents.data.length > 0) {
+                console.log(`🔍 Sample payment intent customer:`, paymentIntents.data[0].customer);
+            }
+            return paymentIntents;
+        }
+        catch (error) {
+            console.error('Error retrieving payment intents:', error);
+            throw new Error('Failed to retrieve payment intents');
+        }
+    }
+    /**
+     * Get customers for admin
+     */
+    static async getCustomers(params = {}) {
+        try {
+            const customers = await stripe.customers.list({
+                limit: params.limit || 50,
+                email: params.search,
+                ...params
+            });
+            return customers;
+        }
+        catch (error) {
+            console.error('Error retrieving customers:', error);
+            throw new Error('Failed to retrieve customers');
+        }
+    }
+    /**
+     * Get invoices for a customer
+     */
+    static async getInvoices(customerId) {
+        try {
+            const invoices = await stripe.invoices.list({
+                customer: customerId,
+                limit: 10
+            });
+            return invoices;
+        }
+        catch (error) {
+            console.error('Error retrieving invoices:', error);
+            throw new Error('Failed to retrieve invoices');
+        }
+    }
+    /**
+     * Get all invoices (admin)
+     */
+    static async getAllInvoices(params = {}) {
+        try {
+            const invoices = await stripe.invoices.list({
+                limit: params.limit || 50,
+                ...params
+            });
+            return invoices;
+        }
+        catch (error) {
+            console.error('Error retrieving all invoices:', error);
+            throw new Error('Failed to retrieve invoices');
         }
     }
 }

@@ -16,7 +16,6 @@ export const CREATE_BOOKING = gql`
           maxAge
         }
         price
-        priceDiscount
         startDates
         endDate
         timeStart

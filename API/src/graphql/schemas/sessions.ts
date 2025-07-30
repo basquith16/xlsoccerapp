@@ -23,7 +23,6 @@ export const sessionSchema = gql`
     rosterLimit: Int!
     availableSpots: Int!
     price: Float!
-    priceDiscount: Float
     startDates: [String!]!
     endDate: String!
     timeStart: String!
@@ -50,7 +49,6 @@ export const sessionSchema = gql`
     birthYear: Int
     ageRange: AgeRange
     price: Float!
-    priceDiscount: Float
     startDates: [String!]!
     endDate: String!
     timeStart: String!
@@ -91,7 +89,6 @@ export const sessionSchema = gql`
     ageRange: String!
     rosterLimit: Int!
     price: Float!
-    priceDiscount: Float
     startDates: [String!]!
     endDate: String!
     timeStart: String!
@@ -112,7 +109,6 @@ export const sessionSchema = gql`
     ageRange: String
     rosterLimit: Int
     price: Float
-    priceDiscount: Float
     startDates: [String!]
     endDate: String
     timeStart: String

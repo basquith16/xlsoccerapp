@@ -2,6 +2,7 @@ import Booking from '../../models/bookingModel';
 import Session from '../../models/sessionModel';
 import Player from '../../models/playerModel';
 import { validateObjectId } from '../../utils/validation';
+import StripeService from '../../services/stripeService';
 export const bookingResolvers = {
     Query: {
         bookings: async (_, __, { user }) => {
@@ -58,6 +59,32 @@ export const bookingResolvers = {
             if (existingBooking) {
                 throw new Error('You already have a booking for this session');
             }
+            // Create or get Stripe customer for analytics tracking
+            try {
+                await StripeService.getOrCreateCustomer(user._id.toString(), user.email, user.name);
+                console.log(`Stripe customer created/retrieved for user: ${user.email}`);
+            }
+            catch (error) {
+                console.error('Error creating Stripe customer:', error);
+                // Don't fail the booking if Stripe customer creation fails
+                // This ensures booking still works even if Stripe is down
+            }
+            // Verify if recent payments are properly associated with customer
+            // This is for debugging the customer association issue
+            try {
+                const recentPayments = await StripeService.getPaymentIntents({
+                    customer: await StripeService.getOrCreateCustomer(user._id.toString(), user.email, user.name).then(c => c.id),
+                    limit: 1
+                });
+                console.log(`🔍 Recent payments for customer:`, recentPayments.data.length);
+                if (recentPayments.data.length > 0) {
+                    const latestPayment = recentPayments.data[0];
+                    console.log(`🔍 Latest payment: ${latestPayment.id}, customer: ${latestPayment.customer}, status: ${latestPayment.status}`);
+                }
+            }
+            catch (error) {
+                console.log('Could not verify recent payments:', error);
+            }
             const booking = new Booking({
                 user: user._id,
                 session: sessionId,
@@ -75,32 +102,22 @@ export const bookingResolvers = {
     Booking: {
         id: (parent) => parent._id || parent.id,
         createdAt: (parent) => parent.createdAt?.toISOString ? parent.createdAt.toISOString() : parent.createdAt,
-        session: async (parent) => {
+        session: async (parent, _, { loaders }) => {
             if (parent.session && typeof parent.session === 'object') {
                 return parent.session;
             }
             if (parent.session && typeof parent.session === 'string') {
-                const session = await Session.findById(parent.session);
-                if (!session) {
-                    throw new Error('Session not found for this booking');
-                }
-                return session;
+                return await loaders.sessionLoader.load(parent.session);
             }
-            throw new Error('No session associated with this booking');
+            return null;
         },
-        player: async (parent) => {
+        player: async (parent, _, { loaders }) => {
             if (parent.player && typeof parent.player === 'object') {
                 return parent.player;
             }
             if (parent.player && typeof parent.player === 'string') {
-                const player = await Player.findById(parent.player);
-                if (!player) {
-                    console.warn(`Player not found for booking ${parent._id}, player ID: ${parent.player}`);
-                    return null;
-                }
-                return player;
+                return await loaders.playerLoader.load(parent.player);
             }
-            console.warn(`No player reference for booking ${parent._id}`);
             return null;
         }
     }

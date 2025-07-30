@@ -28,7 +28,6 @@ const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
     ageRange: '',
     rosterLimit: 20,
     price: 0,
-    priceDiscount: 0,
     startDates: [''],
     endDate: '',
     timeStart: '',
@@ -82,9 +81,6 @@ const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
       newErrors.price = 'Price must be greater than 0';
     }
 
-    if (formData.priceDiscount && formData.priceDiscount >= formData.price) {
-      newErrors.priceDiscount = 'Discount must be less than price';
-    }
 
     if (!formData.startDates.length || !formData.startDates[0]) {
       newErrors.startDates = 'At least one start date is required';
@@ -361,23 +357,6 @@ const CreateSessionForm: React.FC<CreateSessionFormProps> = ({
               step="0.01"
             />
             {errors.price && <p className="text-red-500 text-sm mt-1">{errors.price}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Discount ($)
-            </label>
-            <input
-              type="number"
-              value={formData.priceDiscount}
-              onChange={(e) => handleInputChange('priceDiscount', parseFloat(e.target.value) || 0)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.priceDiscount ? 'border-red-500' : 'border-gray-300'
-              }`}
-              min="0"
-              step="0.01"
-            />
-            {errors.priceDiscount && <p className="text-red-500 text-sm mt-1">{errors.priceDiscount}</p>}
           </div>
         </div>
       </div>

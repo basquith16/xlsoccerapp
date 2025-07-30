@@ -62,15 +62,6 @@ const sessionSchema = new Schema({
     type: Number,
     required: true
   },
-  priceDiscount: {
-    type: Number,
-    validate: {
-      validator: function(this: any, val: number) {
-        return val < this.price;
-      },
-      message: 'Discount ({VALUE}) needs to be lower than price'
-    }
-  },
   startDates: {
     type: [Date],
     required: true

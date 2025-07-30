@@ -1,5 +1,20 @@
 import SessionTemplate from '../../models/sessionTemplateModel';
 import { validateObjectId } from '../../utils/validation';
+// Helper function to convert Mongoose documents to plain objects with string IDs
+const convertToPlainObject = (doc) => {
+    if (!doc)
+        return doc;
+    const plain = doc.toObject ? doc.toObject() : doc;
+    // Convert ObjectIds to strings
+    if (plain._id) {
+        plain.id = plain._id.toString();
+        delete plain._id;
+    }
+    return plain;
+};
+const convertArrayToPlainObjects = (docs) => {
+    return docs.map(convertToPlainObject);
+};
 export const templateResolvers = {
     Query: {
         sessionTemplates: async (_, { limit = 10, offset = 0 }) => {
@@ -11,7 +26,7 @@ export const templateResolvers = {
             const totalCount = await SessionTemplate.countDocuments({ isActive: true });
             const hasNextPage = offset + limit < totalCount;
             return {
-                nodes: templates,
+                nodes: convertArrayToPlainObjects(templates),
                 totalCount,
                 hasNextPage
             };
@@ -26,7 +41,7 @@ export const templateResolvers = {
             if (!template) {
                 throw new Error('Session template not found');
             }
-            return template;
+            return convertToPlainObject(template);
         },
         sessionTemplateBySlug: async (_, { slug }) => {
             if (!slug) {
@@ -38,7 +53,7 @@ export const templateResolvers = {
             if (!template) {
                 throw new Error('Session template not found');
             }
-            return template;
+            return convertToPlainObject(template);
         },
         adminSessionTemplates: async (_, { limit = 10, offset = 0 }, { user }) => {
             if (!user || user.role !== 'admin') {
@@ -51,7 +66,7 @@ export const templateResolvers = {
                     .skip(offset)
                     .limit(limit);
                 return {
-                    nodes: templates,
+                    nodes: convertArrayToPlainObjects(templates),
                     totalCount,
                     hasNextPage: offset + limit < totalCount,
                     hasPreviousPage: offset > 0
@@ -72,7 +87,7 @@ export const templateResolvers = {
                 const template = new SessionTemplate(input);
                 const savedTemplate = await template.save();
                 console.log(`Admin ${user.email} created session template: ${savedTemplate.name} (ID: ${savedTemplate._id})`);
-                return savedTemplate;
+                return convertToPlainObject(savedTemplate);
             }
             catch (error) {
                 console.error('Error creating session template:', error);
@@ -92,7 +107,7 @@ export const templateResolvers = {
                     throw new Error('Session template not found');
                 }
                 console.log(`Admin ${user.email} updated session template: ${template.name} (ID: ${template._id})`);
-                return template;
+                return convertToPlainObject(template);
             }
             catch (error) {
                 console.error('Error updating session template:', error);

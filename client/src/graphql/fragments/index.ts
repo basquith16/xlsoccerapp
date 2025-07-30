@@ -37,7 +37,6 @@ export const SESSION_FIELDS = gql`
       maxAge
     }
     price
-    priceDiscount
     startDates
     endDate
     timeStart
@@ -91,7 +90,6 @@ export const SESSION_ADMIN_FIELDS = gql`
       maxAge
     }
     price
-    priceDiscount
     startDates
     endDate
     timeStart
@@ -132,7 +130,6 @@ export const TEMPLATE_FIELDS = gql`
       maxAge
     }
     price
-    priceDiscount
     defaultDuration
     trainers {
       id
